@@ -7,7 +7,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       titleTemplate: '%s - NuxtJS Admin Template',
-      title: 'Sneat',
+      title: 'SIVA',
 
       link: [{
         rel: 'icon',
@@ -15,6 +15,13 @@ export default defineNuxtConfig({
         href: '/favicon.ico',
       }],
     },
+  },
+
+  runtimeConfig: {
+    apiSecret: '', // can be overridden by NUXT_API_SECRET environment variable
+    public: {
+      apiBase: process.env.NUXT_PUBLIC_API_BASE_URL, // can be overridden by NUXT_PUBLIC_API_BASE environment variable
+    }
   },
 
   devtools: {
@@ -126,7 +133,7 @@ export default defineNuxtConfig({
     disableServerSideAuth: false,
     originEnvKey: 'NUXT_BASE_URL',
     baseURL: process.env.NUXT_PUBLIC_API_BASE_URL,
-    provider: { 
+    provider: {
       type: 'local',
       endpoints: {
         signIn: { path: '/auth/login', method: 'post' },

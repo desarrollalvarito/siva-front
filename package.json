@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@floating-ui/dom": "1.6.8",
+    "@mdi/font": "^7.4.47",
     "@sidebase/nuxt-auth": "0.10.1",
     "@stylistic/stylelint-config": "^1.0.1",
     "@vueuse/core": "^10.11.1",
