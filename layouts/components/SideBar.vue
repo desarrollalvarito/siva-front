@@ -5,6 +5,14 @@ import VerticalNavLink from "@layouts/components/VerticalNavLink.vue";
 </script>
 
 <template>
+  <VerticalNavLink :item="{
+    title: 'Inicio',
+    icon: 'bx-home',
+    to: '/'
+  }" />
+  <VerticalNavSectionTitle :item="{
+    heading: 'Apps & Pages',
+  }" />
   <!-- 👉 Dashboards -->
   <VerticalNavGroup :item="{
     title: 'Dashboards',

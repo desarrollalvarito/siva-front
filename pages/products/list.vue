@@ -92,7 +92,7 @@ const headers = [
   { title: 'Opciones', key: 'actions', align: 'end', sortable: false },
 ]
 
-const { status, data: products } = await useFetch(config.public.apiBase + '/product/get', {
+const { status, data: products } = await useFetch(config.public.apiBase + '/product/list', {
   lazy: false
 })
 
