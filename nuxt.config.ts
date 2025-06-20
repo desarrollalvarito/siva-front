@@ -6,7 +6,7 @@ import svgLoader from 'vite-svg-loader'
 export default defineNuxtConfig({
   app: {
     head: {
-      titleTemplate: '%s - NuxtJS Admin Template',
+      titleTemplate: '%s - Sistema de Ventas y Administración Comercial',
       title: 'SIVA',
 
       link: [{
@@ -139,7 +139,7 @@ export default defineNuxtConfig({
         signIn: { path: '/auth/login', method: 'post' },
         signOut: { path: '/auth/logout', method: 'post' },
         signUp: { path: '/auth/register', method: 'post' },
-        getSession: { path: '/user/session', method: 'get' },
+        getSession: { path: '/auth/session', method: 'get' },
       }
     },
     sessionRefresh: {

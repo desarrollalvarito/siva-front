@@ -5,11 +5,12 @@
         Cargando...
       </div>
       <div v-else>
-        <v-data-table :headers="headers" :hide-default-footer="products?.length < 11" :items="products">
+        <v-data-table v-if="products?.length > 0" :headers="headers" :hide-default-footer="products?.length < 11"
+          :items="products">
           <template v-slot:top>
             <v-toolbar flat>
               <v-toolbar-title>
-                <v-icon color="medium-emphasis" icon="mdi-cart" size="x-small" start></v-icon>
+                <v-icon color="medium-emphasis" icon="mdi-food" size="x-small" start></v-icon>
                 Productos
               </v-toolbar-title>
 
@@ -28,9 +29,9 @@
 
           <template v-slot:item.actions="{ item }">
             <div class="d-flex ga-2 justify-end">
-              <v-icon color="medium-emphasis" icon="mdi-pencil" size="small" @click="edit(item.id)"></v-icon>
+              <v-icon icon="mdi-pencil" size="small" @click="edit(item.id)"></v-icon>
 
-              <v-icon color="medium-emphasis" icon="mdi-delete" size="small" @click="remove(item.id)"></v-icon>
+              <v-icon icon="mdi-delete" size="small" @click="remove(item.id)"></v-icon>
             </div>
           </template>
 
@@ -39,12 +40,15 @@
               @click="reset"></v-btn>
           </template>
         </v-data-table>
+        <v-alert v-else type="error" class="mt-4">
+          No se han encontrado productos.
+        </v-alert>
       </div>
     </client-only>
   </v-sheet>
 
   <v-dialog v-model="dialog" max-width="500">
-    <v-card :subtitle="`${isEditing ? 'Actualiza' : 'Crea'} el item`"
+    <v-card :subtitle="`${isEditing ? 'Actualizar' : 'Crear'} item`"
       :title="`${isEditing ? 'Modificar' : 'Añadir'} un producto`">
       <template v-slot:text>
         <v-row>
@@ -84,6 +88,7 @@ const DEFAULT_RECORD = { id: '', name: '', price: '' }
 const record = ref(DEFAULT_RECORD)
 const dialog = shallowRef(false)
 const isEditing = shallowRef(false)
+const userId = 1
 
 const headers = [
   { title: 'ID', key: 'id', align: 'start' },
@@ -93,6 +98,7 @@ const headers = [
 ]
 
 const { status, data: products } = await useFetch(config.public.apiBase + '/product/list', {
+  server: false,
   lazy: false
 })
 
@@ -106,7 +112,7 @@ function add() {
   dialog.value = true
 }
 
-function edit(id) {
+function edit(id: number) {
   isEditing.value = true
 
   const found = products.value.find(item => item.id === id)
@@ -120,20 +126,59 @@ function edit(id) {
   dialog.value = true
 }
 
-function remove(id) {
-  const index = products.value.findIndex(item => item.id === id)
-  products.value.splice(index, 1)
+async function remove(id: number) {
+  const { status } = await useFetch(config.public.apiBase + '/product/remove', {
+    server: false,
+    method: 'DELETE',
+    body: { id }
+  })
+  if (status.value !== "success") {
+    console.error('Error deleting product:', status.value)
+  }
+  else {
+    const index = products.value.findIndex(item => item.id === id)
+    products.value.splice(index, 1)
+  }
 }
 
-function save() {
+async function save() {
   if (isEditing.value) {
     const index = products.value.findIndex(item => item.id === record.value.id)
-    products.value[index] = record.value
+    const { status } = await useFetch(config.public.apiBase + '/product/modify', {
+      server: false,
+      method: 'PUT',
+      body: {
+        id: record.value.id,
+        name: record.value.name,
+        price: record.value.price,
+        userAt: userId
+      }
+    })
+    if (status.value !== "success") {
+      console.error('Error updating product:', status.value)
+    }
+    else {
+      products.value[index] = record.value
+      console.log("update");
+    }
   } else {
-    record.value.id = products.value.length + 1
-    products.value.push(record.value)
+    const { data: product } = await useFetch(config.public.apiBase + '/product/add', {
+      server: false,
+      method: 'POST',
+      body: {
+        name: record.value.name,
+        price: record.value.price,
+        userAt: userId
+      }
+    })
+    if (status.value !== "success") {
+      console.error('Error updating product:', status.value)
+    }
+    else {
+      products.value.push(product.value)
+      console.log("add");
+    }
   }
-
   dialog.value = false
 }
 
