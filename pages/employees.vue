@@ -1,77 +1,77 @@
 <template>
-  <v-sheet border rounded>
-    <client-only>
-      <div v-if="status == 'pending'">
-        Cargando...
-      </div>
-      <div v-else>
-        <v-data-table v-if="employees?.length > 0" :headers="headers" :hide-default-footer="employees?.length < 11"
-          :items="employees">
-          <template v-slot:top>
-            <v-toolbar flat>
-              <v-toolbar-title>
-                <v-icon color="medium-emphasis" icon="mdi-account-group" size="x-small" start></v-icon>
-                Empleados
-              </v-toolbar-title>
+  <client-only>
+    <v-alert v-if="status == 'pending'" title="Cargando datos..." type="info">
+      <v-progress-linear indeterminate :size="20" :width="10" />
+    </v-alert>
+    <v-alert v-if="error" type="error" class="mt-4" icon="mdi-database-off">
+      Error de obtencion de datos code: {{ error.statusCode }} cause: {{ error.cause.message }}
+    </v-alert>
+    <v-sheet border rounded>
+      <v-data-table v-if="employees?.length > 0" :headers="headers" :hide-default-footer="employees?.length < 11"
+        :items="employees">
+        <template v-slot:top>
+          <v-toolbar flat>
+            <v-toolbar-title>
+              <v-icon color="medium-emphasis" icon="mdi-account-group" size="x-small" start></v-icon>
+              Empleados
+            </v-toolbar-title>
 
-              <v-btn class="me-2" prepend-icon="mdi-plus" rounded="lg" text="Añadir empleado" border
-                @click="add"></v-btn>
-            </v-toolbar>
-          </template>
+            <v-btn class="me-2" prepend-icon="mdi-plus" rounded="lg" text="Añadir empleado" border @click="add"></v-btn>
+          </v-toolbar>
+        </template>
 
-          <template v-slot:item.title="{ value }">
-            <v-chip :text="value" border="thin opacity-25" prepend-icon="mdi-item" label>
-              <template v-slot:prepend>
-                <v-icon color="medium-emphasis"></v-icon>
-              </template>
-            </v-chip>
-          </template>
+        <template v-slot:item.title="{ value }">
+          <v-chip :text="value" border="thin opacity-25" prepend-icon="mdi-item" label>
+            <template v-slot:prepend>
+              <v-icon color="medium-emphasis"></v-icon>
+            </template>
+          </v-chip>
+        </template>
 
-          <template v-slot:item.actions="{ item }">
-            <div class="d-flex ga-2 justify-end">
-              <v-icon icon="mdi-pencil" size="small" @click="edit(item.id)"></v-icon>
+        <template v-slot:item.actions="{ item }">
+          <div class="d-flex ga-2 justify-end">
+            <v-icon icon="mdi-pencil" size="small" @click="edit(item.id)"></v-icon>
 
-              <v-icon icon="mdi-delete" size="small" @click="remove(item.id)"></v-icon>
-            </div>
-          </template>
-        </v-data-table>
-        <v-alert v-else type="error" class="mt-4">
-          No se han encontrado empleados.
-        </v-alert>
-      </div>
-    </client-only>
-  </v-sheet>
+            <v-icon icon="mdi-delete" size="small" @click="remove(item.id)"></v-icon>
+          </div>
+        </template>
+        <template v-slot:no-data>
+          <v-btn prepend-icon="mdi-backup-restore" rounded="lg" text="Reset data" variant="text" border
+            @click="reset"></v-btn>
+        </template>
+      </v-data-table>
+    </v-sheet>
 
-  <v-dialog v-model="dialog" max-width="500">
-    <v-card :subtitle="`${isEditing ? 'Actualizar' : 'Crear'} item`"
-      :title="`${isEditing ? 'Modificar' : 'Añadir'} un empleado`">
-      <template v-slot:text>
-        <v-row>
-          <v-col cols="12" md="6">
-            <v-text-field v-model="record.name" label="Nombres"></v-text-field>
-          </v-col>
-          <v-col cols="12" md="6">
-            <v-text-field v-model="record.name" label="Apellidos"></v-text-field>
-          </v-col>
+    <v-dialog v-model="dialog" max-width="500">
+      <v-card :subtitle="`${isEditing ? 'Actualizar' : 'Crear'} item`"
+        :title="`${isEditing ? 'Modificar' : 'Añadir'} un empleado`">
+        <template v-slot:text>
+          <v-row>
+            <v-col cols="12" md="9">
+              <v-autocomplete v-model="record.run" :items="peoople" label="RUN" item-title="fullName" item-value="id"
+                placeholder="12345678-9"></v-autocomplete>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-text-field v-model="record.names" label="Nombres" placeholder="Juan"></v-text-field>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-text-field v-model="record.lastName" label="Apellidos" placeholder="Perez"></v-text-field>
+            </v-col>
+          </v-row>
+        </template>
 
-          <v-col cols="12" md="6">
-            <v-text-field v-model="record.price" label="Precio"></v-text-field>
-          </v-col>
+        <v-divider></v-divider>
 
-        </v-row>
-      </template>
-
-      <v-divider></v-divider>
-
-      <v-card-actions class="bg-surface-light">
-        <v-btn text="Cancel" variant="plain" @click="dialog = false"></v-btn>
-
-        <v-spacer></v-spacer>
-
-        <v-btn text="Save" @click="save"></v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        <v-card-actions class="bg-surface-light">
+          <v-btn text="Cancel" variant="plain" @click="dialog = false"></v-btn>
+          <v-spacer></v-spacer>
+          <v-btn text="Save" @click="save"></v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </client-only>
 </template>
 <script lang="ts" setup>
 import { onMounted, ref, shallowRef } from 'vue';
@@ -81,12 +81,16 @@ definePageMeta({
   auth: false
 })
 
-const DEFAULT_RECORD = { id: '', name: '', price: '' }
+const DEFAULT_RECORD = { id: '', run: '', names: '', lastName: '', address: '', contact: '', jobRole: '', workShift: '', gender: '', birthDate: '' }
 
 const record = ref(DEFAULT_RECORD)
 const dialog = shallowRef(false)
 const isEditing = shallowRef(false)
 const userId = 1
+const { data: peoople } = await useFetch(config.public.apiBase + '/person/list', {
+  server: false,
+  lazy: false
+})
 
 const headers = [
   { title: 'RUN', key: 'person.run', align: 'start' },
@@ -98,7 +102,7 @@ const headers = [
   { title: 'Opciones', key: 'actions', align: 'end', sortable: false },
 ]
 
-const { status, data: employees } = await useFetch(config.public.apiBase + '/employee/list', {
+const { error, status, data: employees } = await useFetch(config.public.apiBase + '/employee/list', {
   server: false,
   lazy: false
 })
@@ -107,7 +111,7 @@ onMounted(() => {
   reset()
 })
 
-function add() {
+async function add() {
   isEditing.value = false
   record.value = DEFAULT_RECORD
   dialog.value = true
