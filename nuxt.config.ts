@@ -18,9 +18,9 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    apiSecret: '', // can be overridden by NUXT_API_SECRET environment variable
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE_URL, // can be overridden by NUXT_PUBLIC_API_BASE environment variable
+      authOrigin: process.env.NUXT_AUTH_ORIGIN,
     }
   },
 
@@ -129,17 +129,18 @@ export default defineNuxtConfig({
 
   modules: ['@vueuse/nuxt', '@nuxtjs/device', '@pinia/nuxt', '@sidebase/nuxt-auth'],
   auth: {
-    isEnabled: true,
-    disableServerSideAuth: false,
-    originEnvKey: 'NUXT_BASE_URL',
-    baseURL: process.env.NUXT_PUBLIC_API_BASE_URL,
+    originEnvKey: 'NUXT_AUTH_ORIGIN',
+    baseURL: process.env.NUXT_AUTH_ORIGIN,
     provider: {
       type: 'local',
       endpoints: {
-        signIn: { path: '/auth/login', method: 'post' },
-        signOut: { path: '/auth/logout', method: 'post' },
-        signUp: { path: '/auth/register', method: 'post' },
-        getSession: { path: '/auth/session', method: 'get' },
+        signIn: { path: '/login', method: 'post' },
+        signOut: { path: '/logout', method: 'post' },
+        signUp: false,
+        getSession: { path: '/session', method: 'get' },
+      },
+      pages: {
+        login: '/login',
       }
     },
     sessionRefresh: {
