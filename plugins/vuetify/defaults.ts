@@ -1,3 +1,4 @@
+
 export default {
   IconBtn: {
     icon: true,
@@ -194,5 +195,11 @@ export default {
   },
   VNavigationDrawer: {
     touchless: true,
+  },
+  VDateInput: {
+    variant: 'outlined',
+    density: 'comfortable',
+    color: 'primary',
+    hideDetails: 'auto',
   },
 }

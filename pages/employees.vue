@@ -1,147 +1,150 @@
-<template>
-  <client-only>
-    <v-alert v-if="status == 'pending'" title="Cargando datos..." type="info">
-      <v-progress-linear indeterminate :size="20" :width="10" />
-    </v-alert>
-    <v-alert v-if="error" type="error" class="mt-4" icon="mdi-database-off">
-      Error de obtencion de datos code: {{ error.statusCode }} cause: {{ error.cause.message }}
-    </v-alert>
-    <v-sheet border rounded>
-      <v-data-table v-if="employees?.length > 0" :headers="headers" :hide-default-footer="employees?.length < 11"
-        :items="employees">
-        <template v-slot:top>
-          <v-toolbar flat>
-            <v-toolbar-title>
-              <v-icon color="medium-emphasis" icon="mdi-account-group" size="x-small" start></v-icon>
-              Empleados
-            </v-toolbar-title>
-
-            <v-btn class="me-2" prepend-icon="mdi-plus" rounded="lg" text="Añadir empleado" border @click="add"></v-btn>
-          </v-toolbar>
-        </template>
-
-        <template v-slot:item.title="{ value }">
-          <v-chip :text="value" border="thin opacity-25" prepend-icon="mdi-item" label>
-            <template v-slot:prepend>
-              <v-icon color="medium-emphasis"></v-icon>
-            </template>
-          </v-chip>
-        </template>
-
-        <template v-slot:item.actions="{ item }">
-          <div class="d-flex ga-2 justify-end">
-            <v-icon icon="mdi-pencil" size="small" @click="edit(item.id)"></v-icon>
-
-            <v-icon icon="mdi-delete" size="small" @click="remove(item.id)"></v-icon>
-          </div>
-        </template>
-        <template v-slot:no-data>
-          <v-btn prepend-icon="mdi-backup-restore" rounded="lg" text="Reset data" variant="text" border
-            @click="reset"></v-btn>
-        </template>
-      </v-data-table>
-    </v-sheet>
-
-    <v-dialog v-model="dialog" max-width="500">
-      <v-card :subtitle="`${isEditing ? 'Actualizar' : 'Crear'} item`"
-        :title="`${isEditing ? 'Modificar' : 'Añadir'} un empleado`">
-        <template v-slot:text>
-          <v-row>
-            <v-col cols="12" md="9">
-              <v-autocomplete v-model="record.run" :items="peoople" label="RUN" item-title="fullName" item-value="id"
-                placeholder="12345678-9"></v-autocomplete>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-text-field v-model="record.names" label="Nombres" placeholder="Juan"></v-text-field>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field v-model="record.lastName" label="Apellidos" placeholder="Perez"></v-text-field>
-            </v-col>
-          </v-row>
-        </template>
-
-        <v-divider></v-divider>
-
-        <v-card-actions class="bg-surface-light">
-          <v-btn text="Cancel" variant="plain" @click="dialog = false"></v-btn>
-          <v-spacer></v-spacer>
-          <v-btn text="Save" @click="save"></v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </client-only>
-</template>
 <script lang="ts" setup>
-import { onMounted, ref, shallowRef } from 'vue';
+import { onMounted, ref, shallowRef } from 'vue'
+import { VDateInput } from 'vuetify/labs/components'
+
+interface EmployeeRecord {
+  id: number | null
+  idPerson: number | null
+  run: string | null
+  names: string | null
+  lastName: string | null
+  address: string | null
+  contact: string | null
+  jobRole: string | null
+  workShift: string | null
+  gender: string | null
+  birthDate: string | null
+}
+
 const config = useRuntimeConfig()
 
 definePageMeta({
-  auth: false
+  auth: false,
 })
 
-const DEFAULT_RECORD = { id: '', run: '', names: '', lastName: '', address: '', contact: '', jobRole: '', workShift: '', gender: '', birthDate: '' }
+const record = ref<EmployeeRecord>({
+  id: null,
+  idPerson: null,
+  run: null,
+  names: null,
+  lastName: null,
+  address: null,
+  contact: null,
+  jobRole: null,
+  workShift: null,
+  gender: null,
+  birthDate: null,
+})
 
-const record = ref(DEFAULT_RECORD)
 const dialog = shallowRef(false)
 const isEditing = shallowRef(false)
 const userId = 1
-const { data: peoople } = await useFetch(config.public.apiBase + '/person/list', {
+const editable = shallowRef(true)
+const editableRUN = shallowRef(false)
+const search = ref<string>('')
+
+const vaciarRecord = () => {
+  record.value = {
+    id: null,
+    idPerson: null,
+    run: null,
+    names: null,
+    lastName: null,
+    address: null,
+    contact: null,
+    jobRole: null,
+    workShift: null,
+  }
+}
+
+const { data: peoople } = await useFetch(`${config.public.apiBase}/person/list`, {
   server: false,
-  lazy: false
+  lazy: false,
 })
 
-const headers = [
-  { title: 'RUN', key: 'person.run', align: 'start' },
-  { title: 'Nombre', key: `fullName`, value: item => `${item.person.names} ${item.person.lastName}` },
-  { title: 'Cargo', key: 'jobRole' },
-  { title: 'Turno', key: 'workShift' },
-  { title: 'Domicilio', key: 'person.address' },
-  { title: 'Celular', key: 'person.contact' },
-  { title: 'Opciones', key: 'actions', align: 'end', sortable: false },
-]
-
-const { error, status, data: employees } = await useFetch(config.public.apiBase + '/employee/list', {
+const { error, status, data: employees } = await useFetch<EmployeeRecord[]>(`${config.public.apiBase}/employee/list`, {
   server: false,
-  lazy: false
+  lazy: false,
 })
+
+const onSelectedRun = (id: number) => {
+  const found = peoople.value.find(item => item.id === id)
+
+  if (found) {
+    record.value.idPerson = found.id
+    record.value.run = found.run
+    record.value.names = found.names
+    record.value.lastName = found.lastName
+    record.value.gender = found.gender
+    record.value.birthDate = found.birthDate
+    record.value.address = found.address
+    record.value.contact = found.contact
+    editable.value = false
+    editableRUN.value = true
+  }
+}
+
+const onSearchUpdate = (value: string) => {
+  search.value = value
+}
+
+const registrarNuevoRUN = () => {
+  editable.value = false
+  vaciarRecord()
+  record.value.run = search.value
+  editableRUN.value = true
+}
 
 onMounted(() => {
   reset()
 })
 
-async function add() {
+const add = () => {
   isEditing.value = false
-  record.value = DEFAULT_RECORD
+  vaciarRecord()
   dialog.value = true
+  editable.value = true
+  editableRUN.value = false
+  search.value = ''
 }
 
-function edit(id: number) {
+const edit = (id: number) => {
   isEditing.value = true
+  editable.value = false
+  editableRUN.value = false
 
   const found = employees.value.find(item => item.id === id)
 
   record.value = {
     id: found.id,
-    name: found.name,
-    price: found.price
+    workShift: found.workShift,
+    jobRole: found.jobRole,
+    idPerson: found.person.id,
+    run: found.person.run,
+    names: found.person.names,
+    lastName: found.person.lastName,
+    address: found.person.address,
+    contact: found.person.contact,
+    gender: found.person.gender,
+    birthDate: found.person.birthDate,
   }
 
   dialog.value = true
 }
 
 async function remove(id: number) {
-  const { status } = await useFetch(config.public.apiBase + '/employee/remove', {
+  const { status: removeStatus } = await useFetch(`${config.public.apiBase}/employee/remove`, {
     server: false,
     method: 'DELETE',
-    body: { id }
+    body: { id },
   })
-  if (status.value !== "success") {
-    console.error('Error deleting employee:', status.value)
+
+  if (removeStatus.value !== 'success') {
+    console.error('Error deleting employee:', removeStatus.value)
   }
   else {
     const index = employees.value.findIndex(item => item.id === id)
+
     employees.value.splice(index, 1)
   }
 }
@@ -149,39 +152,49 @@ async function remove(id: number) {
 async function save() {
   if (isEditing.value) {
     const index = employees.value.findIndex(item => item.id === record.value.id)
-    const { status } = await useFetch(config.public.apiBase + '/employee/modify', {
+
+    const { status: modifyStatus } = await useFetch(`${config.public.apiBase}/employee/modify`, {
       server: false,
       method: 'PUT',
       body: {
         id: record.value.id,
-        name: record.value.name,
-        price: record.value.price,
-        userAt: userId
-      }
+        names: record.value.names,
+        lastName: record.value.lastName,
+        address: record.value.address,
+        contact: record.value.contact,
+        jobRole: record.value.jobRole,
+        workShift: record.value.workShift,
+        gender: record.value.gender,
+        birthDate: record.value.birthDate,
+        userAt: userId,
+      },
     })
-    if (status.value !== "success") {
-      console.error('Error updating employee:', status.value)
+
+    if (modifyStatus.value !== 'success') {
+      console.error('Error updating employee:', modifyStatus.value)
     }
     else {
       employees.value[index] = record.value
-      console.log("update");
+      console.log('update')
     }
-  } else {
-    const { data: employee } = await useFetch(config.public.apiBase + '/employee/add', {
+  }
+  else {
+    const { data: employee } = await useFetch(`${config.public.apiBase}/employee/add`, {
       server: false,
       method: 'POST',
       body: {
         name: record.value.name,
         price: record.value.price,
-        userAt: userId
-      }
+        userAt: userId,
+      },
     })
-    if (status.value !== "success") {
+
+    if (status.value !== 'success') {
       console.error('Error updating employee:', status.value)
     }
     else {
       employees.value.push(employee.value)
-      console.log("add");
+      console.log('add')
     }
   }
   dialog.value = false
@@ -189,6 +202,131 @@ async function save() {
 
 function reset() {
   dialog.value = false
-  record.value = DEFAULT_RECORD
+  vaciarRecord()
 }
 </script>
+
+<template>
+  <ClientOnly>
+    <VAlert v-if="status === 'pending'" title="Cargando datos..." type="info">
+      <VProgressLinear indeterminate :size="20" :width="10" />
+    </VAlert>
+    <VAlert v-if="error" type="error" class="mt-4" icon="mdi-database-off">
+      Error de obtencion de datos code: {{ error.statusCode }} cause: {{ error.cause.message }}
+    </VAlert>
+    <VSheet border rounded>
+      <VDataTable v-if="employees?.length > 0" :headers="headersEmployees" :hide-default-footer="employees?.length < 11"
+        :items="employees">
+        <template #top>
+          <VToolbar flat>
+            <VToolbarTitle>
+              <VIcon color="medium-emphasis" icon="mdi-account-group" size="x-small" start />
+              Empleados
+            </VToolbarTitle>
+
+            <VBtn class="me-2" prepend-icon="mdi-plus" rounded="lg" text="Añadir empleado" border @click="add" />
+          </VToolbar>
+        </template>
+
+        <template #item.title="{ value }">
+          <VChip :text="value" border="thin opacity-25" prepend-icon="mdi-item" label>
+            <template #prepend>
+              <VIcon color="medium-emphasis" />
+            </template>
+          </VChip>
+        </template>
+
+        <template #item.actions="{ item }">
+          <div class="d-flex ga-2 justify-end">
+            <VIcon icon="mdi-pencil" size="small" @click="edit(item.id)" />
+
+            <VIcon icon="mdi-delete" size="small" @click="remove(item.id)" />
+          </div>
+        </template>
+        <template #no-data>
+          <VListItem>
+            <VListItemTitle>No existen registros</VListItemTitle>
+          </VListItem>
+        </template>
+      </VDataTable>
+    </VSheet>
+
+    <VDialog v-model="dialog" max-width="700">
+      <VCard :title="`${isEditing ? 'Modificar' : 'Añadir'} un empleado`">
+        <template #text>
+          <VCard title="Datos Personales" class="mb-4" variant="outlined">
+            <VCardText>
+              <VRow>
+                <VCol cols="12" md="9">
+                  <VAutocomplete v-model="record.run" :items="peoople" label="Buscar por RUN" item-title="run"
+                    item-value="id" placeholder="12345678-9" :disabled="editableRUN" clearable :hide-no-data="false"
+                    :search="search" @update:search="onSearchUpdate" @update:model-value="onSelectedRun">
+                    <template #item="{ props, item }">
+                      <VListItem v-bind="props" :subtitle="`${item.raw.names} ${item.raw.lastName}`"
+                        :title="item.raw.run" />
+                    </template>
+                    <template #no-data>
+                      <VListItem>
+                        <VListItemTitle style="cursor: pointer;" @click="registrarNuevoRUN">
+                          No se encontró "<strong>{{ search }}</strong>" Registrar ➕.
+                        </VListItemTitle>
+                      </VListItem>
+                    </template>
+                  </VAutocomplete>
+                </VCol>
+              </VRow>
+              <VRow>
+                <VCol cols="12" md="6">
+                  <VTextField v-model="record.names" label="Nombres" placeholder="Juan" :disabled="editable" />
+                </VCol>
+                <VCol cols="12" md="6">
+                  <VTextField v-model="record.lastName" label="Apellidos" placeholder="Perez" :disabled="editable" />
+                </VCol>
+              </VRow>
+              <VRow>
+                <VCol cols="12" md="6">
+                  <VSelect v-model="record.gender" label="Genero" placeholder="Seleccione su genero" :items="genderList"
+                    :disabled="editable" />
+                </VCol>
+                <VCol cols="12" md="6">
+                  <VDateInput v-model="record.birthDate" label="Fecha de nacimiento" placeholder="01/01/1991"
+                    prepend-icon="" :disabled="editable" />
+                </VCol>
+              </VRow>
+              <VRow>
+                <VCol cols="12" md="6">
+                  <VTextField v-model="record.address" label="Direccion" placeholder="Av. 18 N# 5"
+                    :disabled="editable" />
+                </VCol>
+                <VCol cols="12" md="6">
+                  <VTextField v-model="record.contact" label="Numero de Telefono" placeholder="+11578565411"
+                    :disabled="editable" />
+                </VCol>
+              </VRow>
+            </VCardText>
+          </VCard>
+          <VCard title="Datos Laborales" class="mb-4" variant="outlined">
+            <VCardText>
+              <VRow>
+                <VCol cols="12" md="6">
+                  <VSelect v-model="record.jobRole" label="Cargo" placeholder="Gerente" :items="jobRoles"
+                    :disabled="editable" />
+                </VCol>
+                <VCol cols="12" md="6">
+                  <VSelect v-model="record.workShift" label="Turno" placeholder="Mañana, Tarde, Noche"
+                    :items="workShifts" :disabled="editable" />
+                </VCol>
+              </VRow>
+            </VCardText>
+          </VCard>
+        </template>
+        <VDivider />
+        <VCardActions class="bg-surface-light">
+          <VBtn text="Cancelar" variant="plain" @click="dialog = false" />
+          <VSpacer />
+          <VBtn text="Guardar" @click="save" />
+        </VCardActions>
+      </VCard>
+    </VDialog>
+  </ClientOnly>
+</template>
