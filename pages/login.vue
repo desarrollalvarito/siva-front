@@ -3,9 +3,9 @@ import logo from '@images/logo.svg?raw'
 import authV1BottomShape from '@images/svg/auth-v1-bottom-shape.svg?url'
 import authV1TopShape from '@images/svg/auth-v1-top-shape.svg?url'
 
-const { status, signIn, signOut } = useAuth()
-const loogedIn = computed(() => status.value === 'authenticated')
-const error = ref(null)
+const { signIn } = useAuth()
+const error = ref(false)
+const text = ref('')
 
 const form = reactive(
   {
@@ -15,14 +15,19 @@ const form = reactive(
   }
 )
 
-async function handleSignIn() {
-  const res = await signIn({ username: form.username, password: form.password })
-  console.log(res);
-  if (res?.error) error.value = res.error
-  /*   else if (loogedIn.value) {
-      // Redirect to dashboard or home page after successful login
-      navigateTo('/dashboard')
-    } */
+const submit = async () => {
+  if (!form.username || !form.password) {
+    text.value = 'Por favor, complete todos los campos.'
+    error.value = true
+  }
+  else {
+    try {
+      await signIn({ username: form.username, password: form.password }, { callbackUrl: '/dashboard' })
+    } catch (err) {
+      text.value = 'Usuario o contraseña incorrectos, por favor intente de nuevo.'
+      error.value = true
+    }
+  }
 }
 
 const isPasswordVisible = ref(false)
@@ -52,7 +57,7 @@ definePageMeta({
             <!-- eslint-disable vue/no-v-html -->
             <div class="d-flex" v-html="logo" />
             <h1 class="app-logo-title">
-              sneat
+              SIVA
             </h1>
           </NuxtLink>
         </VCardItem>
@@ -67,30 +72,29 @@ definePageMeta({
         </VCardText>
 
         <VCardText>
-          <VForm @submit.prevent="handleSignIn">
+          <VForm @submit.prevent="submit">
             <VRow>
               <!-- username -->
               <VCol cols="12">
-                <VTextField :id="useId()" v-model="form.username" autofocus label="Usuario" type="mi usuario"
+                <VTextField v-model="form.username" autofocus label="Usuario" type="mi usuario"
                   placeholder="username" />
               </VCol>
 
               <!-- password -->
               <VCol cols="12">
-                <VTextField :id="useId()" v-model="form.password" label="Contraseña" placeholder="············"
+                <VTextField v-model="form.password" label="Contraseña" placeholder="············"
                   :type="isPasswordVisible ? 'text' : 'password'" autocomplete="password"
                   :append-inner-icon="isPasswordVisible ? 'bx-hide' : 'bx-show'"
                   @click:append-inner="isPasswordVisible = !isPasswordVisible" />
 
                 <!-- remember me checkbox -->
                 <div class="d-flex align-center justify-space-between flex-wrap my-6">
-                  <VCheckbox :id="useId()" v-model="form.remember" label="Recuerdame" />
-
-                  <a class="text-primary" href="javascript:void(0)">
-                    Olvidaste tu contraseña?
-                  </a>
+                  <VCheckbox v-model="form.remember" label="Recuerdame" />
                 </div>
-
+                <!-- error message -->
+                <VSnackbar v-model="error" color="error">
+                  {{ text }}
+                </VSnackbar>
                 <!-- login button -->
                 <VBtn block type="submit">
                   Ingresar

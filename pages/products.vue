@@ -1,49 +1,46 @@
 <template>
   <v-sheet border rounded>
     <client-only>
-      <div v-if="status == 'pending'">
-        Cargando...
-      </div>
-      <div v-else>
-        <v-data-table v-if="products?.length > 0" :headers="headers" :hide-default-footer="products?.length < 11"
-          :items="products">
-          <template v-slot:top>
-            <v-toolbar flat>
-              <v-toolbar-title>
-                <v-icon color="medium-emphasis" icon="mdi-food" size="x-small" start></v-icon>
-                Productos
-              </v-toolbar-title>
+      <VAlert v-if="error" type="error" class="mt-4" icon="mdi-database-off">
+        Error de obtencion de datos code: {{ error.statusCode }} cause: {{ error.cause.message }}
+      </VAlert>
+      <v-data-table v-if="products?.length > 0" :headers="headers" :hide-default-footer="products?.length < 11"
+        :items="products" :loading="loading" loading-text="'Cargando productos...'">
+        <template v-slot:top>
+          <v-toolbar flat>
+            <v-toolbar-title>
+              <v-icon color="medium-emphasis" icon="mdi-food" size="x-small" start></v-icon>
+              Productos
+            </v-toolbar-title>
 
-              <v-btn class="me-2" prepend-icon="mdi-plus" rounded="lg" text="Añadir Producto" border
-                @click="add"></v-btn>
-            </v-toolbar>
-          </template>
+            <v-btn class="me-2" prepend-icon="mdi-plus" rounded="lg" text="Añadir Producto" border @click="add"></v-btn>
+          </v-toolbar>
+        </template>
 
-          <template v-slot:item.title="{ value }">
-            <v-chip :text="value" border="thin opacity-25" prepend-icon="mdi-item" label>
-              <template v-slot:prepend>
-                <v-icon color="medium-emphasis"></v-icon>
-              </template>
-            </v-chip>
-          </template>
+        <template v-slot:item.title="{ value }">
+          <v-chip :text="value" border="thin opacity-25" prepend-icon="mdi-item" label>
+            <template v-slot:prepend>
+              <v-icon color="medium-emphasis"></v-icon>
+            </template>
+          </v-chip>
+        </template>
 
-          <template v-slot:item.actions="{ item }">
-            <div class="d-flex ga-2 justify-end">
-              <v-icon icon="mdi-pencil" size="small" @click="edit(item.id)"></v-icon>
+        <template v-slot:item.actions="{ item }">
+          <div class="d-flex ga-2 justify-end">
+            <v-icon icon="mdi-pencil" size="small" @click="edit(item.id)"></v-icon>
 
-              <v-icon icon="mdi-delete" size="small" @click="remove(item.id)"></v-icon>
-            </div>
-          </template>
+            <v-icon icon="mdi-delete" size="small" @click="remove(item.id)"></v-icon>
+          </div>
+        </template>
 
-          <template v-slot:no-data>
-            <v-btn prepend-icon="mdi-backup-restore" rounded="lg" text="Reset data" variant="text" border
-              @click="reset"></v-btn>
-          </template>
-        </v-data-table>
-        <v-alert v-else type="error" class="mt-4">
-          No se han encontrado productos.
-        </v-alert>
-      </div>
+        <template v-slot:no-data>
+          <v-btn prepend-icon="mdi-backup-restore" rounded="lg" text="Reset data" variant="text" border
+            @click="reset"></v-btn>
+        </template>
+      </v-data-table>
+      <v-alert v-else type="error" class="mt-4">
+        No se han encontrado productos.
+      </v-alert>
     </client-only>
   </v-sheet>
 
@@ -79,15 +76,12 @@
 import { onMounted, ref, shallowRef } from 'vue';
 const config = useRuntimeConfig()
 
-definePageMeta({
-  auth: false
-})
-
 const DEFAULT_RECORD = { id: '', name: '', price: '' }
 
 const record = ref(DEFAULT_RECORD)
 const dialog = shallowRef(false)
 const isEditing = shallowRef(false)
+const loading = ref(true)
 const userId = 1
 
 const headers = [
@@ -97,10 +91,12 @@ const headers = [
   { title: 'Opciones', key: 'actions', align: 'end', sortable: false },
 ]
 
-const { status, data: products } = await useFetch(config.public.apiBase + '/product/list', {
+const { error, status, data: products } = await useFetch(config.public.apiBase + '/product/list', {
   server: false,
   lazy: false
 })
+
+loading.value = status.value
 
 onMounted(() => {
   reset()

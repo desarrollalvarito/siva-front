@@ -56,7 +56,7 @@ import UserProfile from '@/layouts/components/UserProfile.vue'
         <!-- eslint-enable -->
 
         <h1 class="app-logo-title">
-          sneat
+          siva
         </h1>
       </NuxtLink>
 

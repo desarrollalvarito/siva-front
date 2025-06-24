@@ -18,10 +18,6 @@ interface EmployeeRecord {
 
 const config = useRuntimeConfig()
 
-definePageMeta({
-  auth: false,
-})
-
 const record = ref<EmployeeRecord>({
   id: null,
   idPerson: null,

@@ -74,10 +74,6 @@
 import { onMounted, ref, shallowRef } from 'vue';
 const config = useRuntimeConfig()
 
-definePageMeta({
-  auth: false
-})
-
 const DEFAULT_RECORD = { id: '', name: '', price: '' }
 
 const record = ref(DEFAULT_RECORD)

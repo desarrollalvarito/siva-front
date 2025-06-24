@@ -141,11 +141,26 @@ export default defineNuxtConfig({
       },
       pages: {
         login: '/login',
+      },
+      session: {
+        dataType: {
+          id: 'number',
+          username: 'string',
+          email: 'string',
+          personId: 'number',
+          person: '{ run: string, names: string, lastName: string, gender: string, birthDate: string}',
+        },
+      },
+      token: {
+        type: 'Bearer',
+        headerName: 'Authorization',
+        maxAgeInSeconds: 60 * 60 * 12, // 12 hours
+        sameSiteAttribute: 'strict',
       }
     },
     sessionRefresh: {
-      enablePeriodically: true,
-      enableOnWindowFocus: true,
+      enablePeriodically: 1000 * 60 * 2, // 2 hour
+      enableOnWindowFocus: false,
     },
     globalAppMiddleware: true
   },
