@@ -21,7 +21,7 @@ export default defineNuxtConfig({
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE_URL, // can be overridden by NUXT_PUBLIC_API_BASE environment variable
       authOrigin: process.env.NUXT_AUTH_ORIGIN,
-    }
+    },
   },
 
   devtools: {
@@ -156,13 +156,13 @@ export default defineNuxtConfig({
         headerName: 'Authorization',
         maxAgeInSeconds: 60 * 60 * 12, // 12 hours
         sameSiteAttribute: 'strict',
-      }
+      },
     },
     sessionRefresh: {
       enablePeriodically: 1000 * 60 * 2, // 2 hour
       enableOnWindowFocus: false,
     },
-    globalAppMiddleware: true
+    globalAppMiddleware: true,
   },
   compatibilityDate: '2025-06-08',
 })

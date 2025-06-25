@@ -1,50 +1,57 @@
+import { defineStore } from 'pinia'
 import type { Product } from '~/types/product'
+
+const config = useRuntimeConfig()
 
 export const useProductStore = defineStore('product', () => {
   const products = ref<Product[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  // Obtener lista
-  const getProducts = async () => {
+  const fetchProducts = async () => {
     try {
       loading.value = true
-      const { data } = await useFetch<Product[]>('/products/list')
+
+      const { data } = await useFetch<Product[]>(`${config.public.apiBase}/product/list`)
+
       products.value = data.value || []
-    } catch (e) {
-      error.value = 'No se pudieron cargar los productos'
-      console.error(e)
-    } finally {
+    }
+    catch (e) {
+      error.value = 'Fallo al cargar los productos.'
+    }
+    finally {
       loading.value = false
     }
   }
 
-  // Agregar uno
-  const addProduct = async (nuevo: Product) => {
-    const res = await $fetch<Product>('/products/add', {
+  const createProduct = async (product: Product) => {
+    const newProduct = await $fetch<Product>(`${config.public.apiBase}/product/add`, {
       method: 'POST',
-      body: nuevo
+      body: product,
     })
-    products.value.push(res)
+
+    products.value.push(newProduct)
   }
 
-  // Actualizar uno
-  const modifyProduct = async (id: number, data: Product) => {
-    const res = await $fetch<Product>(`/api/products/modify`, {
+  const updateProduct = async (id: number, product: Product) => {
+    const updated = await $fetch<Product>(`/api/products/${id}`, {
       method: 'PUT',
-      body: data
+      body: product,
     })
-    const i = products.value.findIndex(p => p.id === id)
-    if (i !== -1) products.value[i] = res
+
+    const index = products.value.findIndex(p => p.id === id)
+    if (index !== -1)
+      products.value[index] = updated
   }
 
   return {
     products,
     loading,
     error,
-    getProducts,
-    addProduct,
-    modifyProduct
+    fetchProducts,
+    createProduct,
+    updateProduct,
   }
 })
 
+// This store manages product data, including fetching, creating, and updating products.

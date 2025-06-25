@@ -1,79 +1,6 @@
-<template>
-  <v-sheet border rounded>
-    <client-only>
-      <VAlert v-if="error" type="error" class="mt-4" icon="mdi-database-off">
-        Error de obtencion de datos code: {{ error.statusCode }} cause: {{ error.cause.message }}
-      </VAlert>
-      <v-data-table v-if="products?.length > 0" :headers="headers" :hide-default-footer="products?.length < 11"
-        :items="products" :loading="loading" loading-text="'Cargando productos...'">
-        <template v-slot:top>
-          <v-toolbar flat>
-            <v-toolbar-title>
-              <v-icon color="medium-emphasis" icon="mdi-food" size="x-small" start></v-icon>
-              Productos
-            </v-toolbar-title>
-
-            <v-btn class="me-2" prepend-icon="mdi-plus" rounded="lg" text="Añadir Producto" border @click="add"></v-btn>
-          </v-toolbar>
-        </template>
-
-        <template v-slot:item.title="{ value }">
-          <v-chip :text="value" border="thin opacity-25" prepend-icon="mdi-item" label>
-            <template v-slot:prepend>
-              <v-icon color="medium-emphasis"></v-icon>
-            </template>
-          </v-chip>
-        </template>
-
-        <template v-slot:item.actions="{ item }">
-          <div class="d-flex ga-2 justify-end">
-            <v-icon icon="mdi-pencil" size="small" @click="edit(item.id)"></v-icon>
-
-            <v-icon icon="mdi-delete" size="small" @click="remove(item.id)"></v-icon>
-          </div>
-        </template>
-
-        <template v-slot:no-data>
-          <v-btn prepend-icon="mdi-backup-restore" rounded="lg" text="Reset data" variant="text" border
-            @click="reset"></v-btn>
-        </template>
-      </v-data-table>
-      <v-alert v-else type="error" class="mt-4">
-        No se han encontrado productos.
-      </v-alert>
-    </client-only>
-  </v-sheet>
-
-  <v-dialog v-model="dialog" max-width="500">
-    <v-card :subtitle="`${isEditing ? 'Actualizar' : 'Crear'} item`"
-      :title="`${isEditing ? 'Modificar' : 'Añadir'} un producto`">
-      <template v-slot:text>
-        <v-row>
-          <v-col cols="12">
-            <v-text-field v-model="record.name" label="Nombre del producto"></v-text-field>
-          </v-col>
-
-          <v-col cols="12" md="6">
-            <v-text-field v-model="record.price" label="Precio"></v-text-field>
-          </v-col>
-
-        </v-row>
-      </template>
-
-      <v-divider></v-divider>
-
-      <v-card-actions class="bg-surface-light">
-        <v-btn text="Cancel" variant="plain" @click="dialog = false"></v-btn>
-
-        <v-spacer></v-spacer>
-
-        <v-btn text="Save" @click="save"></v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-</template>
 <script lang="ts" setup>
-import { onMounted, ref, shallowRef } from 'vue';
+import { onMounted, ref, shallowRef } from 'vue'
+
 const config = useRuntimeConfig()
 
 const DEFAULT_RECORD = { id: '', name: '', price: '' }
@@ -81,26 +8,11 @@ const DEFAULT_RECORD = { id: '', name: '', price: '' }
 const record = ref(DEFAULT_RECORD)
 const dialog = shallowRef(false)
 const isEditing = shallowRef(false)
-const loading = ref(true)
 const userId = 1
+const { products, loading, error, fetchProducts } = useProducts()
+const { createProduct, updateProduct, deleteProduct } = useProduct()
 
-const headers = [
-  { title: 'ID', key: 'id', align: 'start' },
-  { title: 'Producto', key: 'name' },
-  { title: 'Precio', key: 'price', align: 'end' },
-  { title: 'Opciones', key: 'actions', align: 'end', sortable: false },
-]
-
-const { error, status, data: products } = await useFetch(config.public.apiBase + '/product/list', {
-  server: false,
-  lazy: false
-})
-
-loading.value = status.value
-
-onMounted(() => {
-  reset()
-})
+onMounted(fetchProducts)
 
 function add() {
   isEditing.value = false
@@ -116,23 +28,25 @@ function edit(id: number) {
   record.value = {
     id: found.id,
     name: found.name,
-    price: found.price
+    price: found.price,
   }
 
   dialog.value = true
 }
 
 async function remove(id: number) {
-  const { status } = await useFetch(config.public.apiBase + '/product/remove', {
+  const { status } = await useFetch(`${config.public.apiBase}/product/remove`, {
     server: false,
     method: 'DELETE',
-    body: { id }
+    body: { id },
   })
-  if (status.value !== "success") {
+
+  if (status.value !== 'success') {
     console.error('Error deleting product:', status.value)
   }
   else {
     const index = products.value.findIndex(item => item.id === id)
+
     products.value.splice(index, 1)
   }
 }
@@ -140,39 +54,43 @@ async function remove(id: number) {
 async function save() {
   if (isEditing.value) {
     const index = products.value.findIndex(item => item.id === record.value.id)
-    const { status } = await useFetch(config.public.apiBase + '/product/modify', {
+
+    const { status } = await useFetch(`${config.public.apiBase}/product/modify`, {
       server: false,
       method: 'PUT',
       body: {
         id: record.value.id,
         name: record.value.name,
         price: record.value.price,
-        userAt: userId
-      }
+        userAt: userId,
+      },
     })
-    if (status.value !== "success") {
+
+    if (status.value !== 'success') {
       console.error('Error updating product:', status.value)
     }
     else {
       products.value[index] = record.value
-      console.log("update");
+      console.log('update')
     }
-  } else {
-    const { data: product } = await useFetch(config.public.apiBase + '/product/add', {
+  }
+  else {
+    const { data: product } = await useFetch(`${config.public.apiBase}/product/add`, {
       server: false,
       method: 'POST',
       body: {
         name: record.value.name,
         price: record.value.price,
-        userAt: userId
-      }
+        userAt: userId,
+      },
     })
-    if (status.value !== "success") {
+
+    if (status.value !== 'success') {
       console.error('Error updating product:', status.value)
     }
     else {
       products.value.push(product.value)
-      console.log("add");
+      console.log('add')
     }
   }
   dialog.value = false
@@ -183,3 +101,73 @@ function reset() {
   record.value = DEFAULT_RECORD
 }
 </script>
+
+<template>
+  <VSheet border rounded>
+    <ClientOnly>
+      <VAlert v-if="error" type="error" class="mt-4" icon="mdi-database-off">
+        Error de obtencion de datos: {{ error }}
+      </VAlert>
+      <ProductsModal @submit="createProduct" v-slot:activator="{ props }">
+        <v-btn color="primary" v-bind="props">Create Product</v-btn>
+      </ProductsModal>
+      <VDataTable :headers="headersProducts" :hide-default-footer="products?.length < 11" :items="products"
+        :loading="loading" loading-text="'Cargando productos...'">
+        <template #top>
+          <VToolbar flat>
+            <VToolbarTitle>
+              <VIcon color="medium-emphasis" icon="mdi-food" size="x-small" start />
+              Productos
+            </VToolbarTitle>
+            <VBtn class="me-2" prepend-icon="mdi-plus" rounded="lg" text="Añadir Producto" border @click="add" />
+          </VToolbar>
+        </template>
+
+        <template #item.title="{ value }">
+          <VChip :text="value" border="thin opacity-25" prepend-icon="mdi-item" label>
+            <template #prepend>
+              <VIcon color="medium-emphasis" />
+            </template>
+          </VChip>
+        </template>
+
+        <template #item.actions="{ item }">
+          <div class="d-flex ga-2 justify-end">
+            <VIcon icon="mdi-pencil" size="small" @click="edit(item.id)" />
+
+            <VIcon icon="mdi-delete" size="small" @click="remove(item.id)" />
+          </div>
+        </template>
+
+        <template #no-data>
+          No se han encontrado productos.
+        </template>
+      </VDataTable>
+    </ClientOnly>
+  </VSheet>
+
+  <!--   <VDialog v-model="dialog" max-width="500">
+    <VCard :subtitle="`${isEditing ? 'Actualizar' : 'Crear'} item`"
+      :title="`${isEditing ? 'Modificar' : 'Añadir'} un producto`">
+      <template #text>
+        <VRow>
+          <VCol cols="12">
+            <VTextField v-model="record.name" label="Nombre del producto" />
+          </VCol>
+
+          <VCol cols="12" md="6">
+            <VTextField v-model="record.price" label="Precio" />
+          </VCol>
+        </VRow>
+      </template>
+
+      <VDivider />
+
+      <VCardActions class="bg-surface-light">
+        <VBtn text="Cancel" variant="plain" @click="dialog = false" />
+        <VSpacer />
+        <VBtn text="Save" @click="save" />
+      </VCardActions>
+    </VCard>
+  </VDialog> -->
+</template>

@@ -1,5 +1,5 @@
 {
-  "name": "sneat-nuxtjs-admin-template-free",
+  "name": "siva",
   "version": "1.1.0",
   "private": true,
   "type": "module",
@@ -13,13 +13,11 @@
   },
   "dependencies": {
     "@floating-ui/dom": "1.6.8",
-    "@mdi/font": "^7.4.47",
-    "@sidebase/nuxt-auth": "0.10.1",
+    "@sidebase/nuxt-auth": "^0.10.1",
     "@stylistic/stylelint-config": "^1.0.1",
     "@vueuse/core": "^10.11.1",
     "@vueuse/math": "^10.11.1",
     "apexcharts": "3.49.2",
-    "next-auth": "~4.21.1",
     "nuxt": "3.14.1592",
     "pinia": "^2.3.0",
     "prismjs": "^1.29.0",

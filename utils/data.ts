@@ -39,3 +39,10 @@ export const headersEmployees = [
   { title: 'Celular', key: 'person.contact' },
   { title: 'Opciones', key: 'actions', align: 'end', sortable: false },
 ]
+
+export const headersProducts = [
+  { title: 'ID', key: 'id', align: 'start' },
+  { title: 'Producto', key: 'name' },
+  { title: 'Precio', key: 'price', align: 'end' },
+  { title: 'Opciones', key: 'actions', align: 'end', sortable: false },
+]

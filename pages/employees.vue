@@ -204,28 +204,65 @@ function reset() {
 
 <template>
   <ClientOnly>
-    <VAlert v-if="status === 'pending'" title="Cargando datos..." type="info">
-      <VProgressLinear indeterminate :size="20" :width="10" />
+    <VAlert
+      v-if="status === 'pending'"
+      title="Cargando datos..."
+      type="info"
+    >
+      <VProgressLinear
+        indeterminate
+        :size="20"
+        :width="10"
+      />
     </VAlert>
-    <VAlert v-if="error" type="error" class="mt-4" icon="mdi-database-off">
+    <VAlert
+      v-if="error"
+      type="error"
+      class="mt-4"
+      icon="mdi-database-off"
+    >
       Error de obtencion de datos code: {{ error.statusCode }} cause: {{ error.cause.message }}
     </VAlert>
-    <VSheet border rounded>
-      <VDataTable v-if="employees?.length > 0" :headers="headersEmployees" :hide-default-footer="employees?.length < 11"
-        :items="employees">
+    <VSheet
+      border
+      rounded
+    >
+      <VDataTable
+        v-if="employees?.length > 0"
+        :headers="headersEmployees"
+        :hide-default-footer="employees?.length < 11"
+        :items="employees"
+      >
         <template #top>
           <VToolbar flat>
             <VToolbarTitle>
-              <VIcon color="medium-emphasis" icon="mdi-account-group" size="x-small" start />
+              <VIcon
+                color="medium-emphasis"
+                icon="mdi-account-group"
+                size="x-small"
+                start
+              />
               Empleados
             </VToolbarTitle>
 
-            <VBtn class="me-2" prepend-icon="mdi-plus" rounded="lg" text="Añadir empleado" border @click="add" />
+            <VBtn
+              class="me-2"
+              prepend-icon="mdi-plus"
+              rounded="lg"
+              text="Añadir empleado"
+              border
+              @click="add"
+            />
           </VToolbar>
         </template>
 
         <template #item.title="{ value }">
-          <VChip :text="value" border="thin opacity-25" prepend-icon="mdi-item" label>
+          <VChip
+            :text="value"
+            border="thin opacity-25"
+            prepend-icon="mdi-item"
+            label
+          >
             <template #prepend>
               <VIcon color="medium-emphasis" />
             </template>
@@ -234,9 +271,17 @@ function reset() {
 
         <template #item.actions="{ item }">
           <div class="d-flex ga-2 justify-end">
-            <VIcon icon="mdi-pencil" size="small" @click="edit(item.id)" />
+            <VIcon
+              icon="mdi-pencil"
+              size="small"
+              @click="edit(item.id)"
+            />
 
-            <VIcon icon="mdi-delete" size="small" @click="remove(item.id)" />
+            <VIcon
+              icon="mdi-delete"
+              size="small"
+              @click="remove(item.id)"
+            />
           </div>
         </template>
         <template #no-data>
@@ -247,23 +292,50 @@ function reset() {
       </VDataTable>
     </VSheet>
 
-    <VDialog v-model="dialog" max-width="700">
+    <VDialog
+      v-model="dialog"
+      max-width="700"
+    >
       <VCard :title="`${isEditing ? 'Modificar' : 'Añadir'} un empleado`">
         <template #text>
-          <VCard title="Datos Personales" class="mb-4" variant="outlined">
+          <VCard
+            title="Datos Personales"
+            class="mb-4"
+            variant="outlined"
+          >
             <VCardText>
               <VRow>
-                <VCol cols="12" md="9">
-                  <VAutocomplete v-model="record.run" :items="peoople" label="Buscar por RUN" item-title="run"
-                    item-value="id" placeholder="12345678-9" :disabled="editableRUN" clearable :hide-no-data="false"
-                    :search="search" @update:search="onSearchUpdate" @update:model-value="onSelectedRun">
+                <VCol
+                  cols="12"
+                  md="9"
+                >
+                  <VAutocomplete
+                    v-model="record.run"
+                    :items="peoople"
+                    label="Buscar por RUN"
+                    item-title="run"
+                    item-value="id"
+                    placeholder="12345678-9"
+                    :disabled="editableRUN"
+                    clearable
+                    :hide-no-data="false"
+                    :search="search"
+                    @update:search="onSearchUpdate"
+                    @update:model-value="onSelectedRun"
+                  >
                     <template #item="{ props, item }">
-                      <VListItem v-bind="props" :subtitle="`${item.raw.names} ${item.raw.lastName}`"
-                        :title="item.raw.run" />
+                      <VListItem
+                        v-bind="props"
+                        :subtitle="`${item.raw.names} ${item.raw.lastName}`"
+                        :title="item.raw.run"
+                      />
                     </template>
                     <template #no-data>
                       <VListItem>
-                        <VListItemTitle style="cursor: pointer;" @click="registrarNuevoRUN">
+                        <VListItemTitle
+                          style="cursor: pointer;"
+                          @click="registrarNuevoRUN"
+                        >
                           No se encontró "<strong>{{ search }}</strong>" Registrar ➕.
                         </VListItemTitle>
                       </VListItem>
@@ -272,45 +344,111 @@ function reset() {
                 </VCol>
               </VRow>
               <VRow>
-                <VCol cols="12" md="6">
-                  <VTextField v-model="record.names" label="Nombres" placeholder="Juan" :disabled="editable" />
+                <VCol
+                  cols="12"
+                  md="6"
+                >
+                  <VTextField
+                    v-model="record.names"
+                    label="Nombres"
+                    placeholder="Juan"
+                    :disabled="editable"
+                  />
                 </VCol>
-                <VCol cols="12" md="6">
-                  <VTextField v-model="record.lastName" label="Apellidos" placeholder="Perez" :disabled="editable" />
+                <VCol
+                  cols="12"
+                  md="6"
+                >
+                  <VTextField
+                    v-model="record.lastName"
+                    label="Apellidos"
+                    placeholder="Perez"
+                    :disabled="editable"
+                  />
                 </VCol>
               </VRow>
               <VRow>
-                <VCol cols="12" md="6">
-                  <VSelect v-model="record.gender" label="Genero" placeholder="Seleccione su genero" :items="genderList"
-                    :disabled="editable" />
+                <VCol
+                  cols="12"
+                  md="6"
+                >
+                  <VSelect
+                    v-model="record.gender"
+                    label="Genero"
+                    placeholder="Seleccione su genero"
+                    :items="genderList"
+                    :disabled="editable"
+                  />
                 </VCol>
-                <VCol cols="12" md="6">
-                  <VDateInput v-model="record.birthDate" label="Fecha de nacimiento" placeholder="01/01/1991"
-                    prepend-icon="" :disabled="editable" />
+                <VCol
+                  cols="12"
+                  md="6"
+                >
+                  <VDateInput
+                    v-model="record.birthDate"
+                    label="Fecha de nacimiento"
+                    placeholder="01/01/1991"
+                    prepend-icon=""
+                    :disabled="editable"
+                  />
                 </VCol>
               </VRow>
               <VRow>
-                <VCol cols="12" md="6">
-                  <VTextField v-model="record.address" label="Direccion" placeholder="Av. 18 N# 5"
-                    :disabled="editable" />
+                <VCol
+                  cols="12"
+                  md="6"
+                >
+                  <VTextField
+                    v-model="record.address"
+                    label="Direccion"
+                    placeholder="Av. 18 N# 5"
+                    :disabled="editable"
+                  />
                 </VCol>
-                <VCol cols="12" md="6">
-                  <VTextField v-model="record.contact" label="Numero de Telefono" placeholder="+11578565411"
-                    :disabled="editable" />
+                <VCol
+                  cols="12"
+                  md="6"
+                >
+                  <VTextField
+                    v-model="record.contact"
+                    label="Numero de Telefono"
+                    placeholder="+11578565411"
+                    :disabled="editable"
+                  />
                 </VCol>
               </VRow>
             </VCardText>
           </VCard>
-          <VCard title="Datos Laborales" class="mb-4" variant="outlined">
+          <VCard
+            title="Datos Laborales"
+            class="mb-4"
+            variant="outlined"
+          >
             <VCardText>
               <VRow>
-                <VCol cols="12" md="6">
-                  <VSelect v-model="record.jobRole" label="Cargo" placeholder="Gerente" :items="jobRoles"
-                    :disabled="editable" />
+                <VCol
+                  cols="12"
+                  md="6"
+                >
+                  <VSelect
+                    v-model="record.jobRole"
+                    label="Cargo"
+                    placeholder="Gerente"
+                    :items="jobRoles"
+                    :disabled="editable"
+                  />
                 </VCol>
-                <VCol cols="12" md="6">
-                  <VSelect v-model="record.workShift" label="Turno" placeholder="Mañana, Tarde, Noche"
-                    :items="workShifts" :disabled="editable" />
+                <VCol
+                  cols="12"
+                  md="6"
+                >
+                  <VSelect
+                    v-model="record.workShift"
+                    label="Turno"
+                    placeholder="Mañana, Tarde, Noche"
+                    :items="workShifts"
+                    :disabled="editable"
+                  />
                 </VCol>
               </VRow>
             </VCardText>
@@ -318,9 +456,16 @@ function reset() {
         </template>
         <VDivider />
         <VCardActions class="bg-surface-light">
-          <VBtn text="Cancelar" variant="plain" @click="dialog = false" />
+          <VBtn
+            text="Cancelar"
+            variant="plain"
+            @click="dialog = false"
+          />
           <VSpacer />
-          <VBtn text="Guardar" @click="save" />
+          <VBtn
+            text="Guardar"
+            @click="save"
+          />
         </VCardActions>
       </VCard>
     </VDialog>
