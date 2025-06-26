@@ -1,13 +1,13 @@
 <template>
-  <v-form v-model="valid" @submit.prevent="handleSubmit">
-    <v-text-field v-model="form.name" label="Nombre del producto" :rules="[rules.required]" required />
-    <v-text-field v-model.number="form.price" label="Precio" type="number" :rules="[rules.required, rules.minZero]"
+  <VForm v-model="valid" @submit.prevent="handleSubmit">
+    <VTextField v-model="form.name" label="Nombre del producto" :rules="[rules.required]" required />
+    <VTextField v-model.number="form.price" label="Precio" type="number" :rules="[rules.required, rules.minZero]"
       required />
 
-    <v-btn type="submit" color="primary" class="mt-4" :disabled="!valid">
+    <VBtn type="submit" color="primary" class="mt-4" :disabled="!valid">
       {{ isEdit ? 'Modificar' : 'Añadir' }}
-    </v-btn>
-  </v-form>
+    </VBtn>
+  </VForm>
 </template>
 
 <script setup lang="ts">

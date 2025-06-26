@@ -1,6 +1,7 @@
 import type { Product } from '@/types/product'
 
 export const useProduct = () => {
+  const baseURL = urlToApiBase('/product')
   const product = ref<Product | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -10,7 +11,10 @@ export const useProduct = () => {
     error.value = null
 
     try {
-      const { data, error: fetchError } = await useFetch<Product>(`/api/products/${id}`)
+      const { data, error: fetchError } = await useFetch<Product>(`/api/products/${id}`, {
+        server: false,
+        lazy: false
+      })
       if (fetchError.value)
         throw fetchError.value
       product.value = data.value || null
@@ -24,7 +28,8 @@ export const useProduct = () => {
   }
 
   const createProduct = async (payload: Product) => {
-    return await $fetch<Product>('/api/products', {
+    console.log(payload);
+    return await $fetch<Product>(`${baseURL}/add`, {
       method: 'POST',
       body: payload,
     })
@@ -38,8 +43,9 @@ export const useProduct = () => {
   }
 
   const deleteProduct = async (id: number) => {
-    return await $fetch(`/api/products/${id}`, {
+    return await $fetch<Product>(`${baseURL}/remove`, {
       method: 'DELETE',
+      body: { id },
     })
   }
 

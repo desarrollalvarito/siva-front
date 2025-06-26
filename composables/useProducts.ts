@@ -11,10 +11,8 @@ export const useProducts = () => {
     error.value = null
 
     try {
-      const { data, error: fetchError } = await useFetch<Product[]>(`${baseURL}/list`)
-      if (fetchError.value)
-        throw fetchError.value
-      products.value = data.value || []
+      const data = await $fetch<Product[]>(`${baseURL}/list`)
+      products.value = data
     }
     catch (err: any) {
       error.value = err.message || 'Fallo al obtener los productos'
