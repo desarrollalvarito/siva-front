@@ -1,36 +1,58 @@
 <script lang="ts" setup>
+import type { Product } from '@/types/model'
 import { onMounted, ref } from 'vue'
-import type { Product } from '~/types/product'
 
-const userId = 1
-const { products, loading, error, fetchProducts } = useProducts()
-const { createProduct: create, updateProduct: update, deleteProduct: remove } = useProduct()
-const isEdit = ref(false)
-const modelValue = ref<Product | null>({
-  id: 0,
-  name: '',
-  price: 0,
-})
+const { products, loading, error, fetchProducts, createProduct, updateProduct, deleteProduct } = useProduct()
+const dialogOpen = ref(false)
+const isEditMode = ref(false)
+const selectedProduct = ref<Product | null>(null)
+const deleteDialog = ref();
+const showSuccess = ref(false)
+const textSuccess = ref('')
 
 onMounted(fetchProducts)
 
-const createProduct = async (data: Product) => {
-  console.log(data);
-  await create(data)
-  await fetchProducts()
-}
-
-const updateProduct = async (id: number, data: Product) => {
-  await update(id, data)
-  await fetchProducts()
-}
-
-const deleteProduct = async (id: number) => {
-  if (confirm('Are you sure you want to delete this product?')) {
-    await remove(id)
-    await fetchProducts()
+// Métodos CRUD
+const openDialog = (edit: boolean, product: Product | null = null) => {
+  isEditMode.value = edit;
+  if (product) {
+    // Si es edición, asignar el producto seleccionado
+    selectedProduct.value = { ...product }; // Clonar para evitar mutaciones directas
+  } else {
+    // Si es creación, reiniciar el formulario
+    selectedProduct.value = { name: '', price: 0 };
   }
+  dialogOpen.value = true;
+};
+
+const openDeleteDialog = (product: Product) => {
+  selectedProduct.value = product;
+  deleteDialog.value?.open();
+};
+
+const handleSubmit = async (product: Product) => {
+  product.userAt = 1
+  if (isEditMode.value && product.id) {
+    // Actualizar
+    await updateProduct(product);
+    textSuccess.value = 'Producto modificado Satisfactoriamente'
+    showSuccess.value = true
+  } else {
+    // Crear (simula ID autoincremental)
+    await createProduct(product)
+    textSuccess.value = 'Producto creado Satisfactoriamente'
+    showSuccess.value = true
+  }
+  await fetchProducts();
+};
+
+const handleDelete = async () => {
+  await deleteProduct(selectedProduct?.value?.id)
+  textSuccess.value = 'Producto eliminado Satisfactoriamente'
+  showSuccess.value = true
+  await fetchProducts()
 }
+
 </script>
 
 <template>
@@ -39,6 +61,8 @@ const deleteProduct = async (id: number) => {
       <VAlert v-if="error" type="error" class="mt-4" icon="mdi-database-off">
         Error de obtencion de datos: {{ error }}
       </VAlert>
+      <DeleteModal ref="deleteDialog" tag="Producto" :name="selectedProduct?.name" @confirm="handleDelete" />
+      <ProductModal v-model="dialogOpen" :is-edit="isEditMode" :product="selectedProduct" @submit="handleSubmit" />
       <VDataTable :headers="headersProducts" :hide-default-footer="products?.length < 11" :items="products"
         :loading="loading" loading-text="'Cargando productos...'">
         <template #top>
@@ -47,9 +71,8 @@ const deleteProduct = async (id: number) => {
               <VIcon color="medium-emphasis" icon="mdi-food" size="x-small" start />
               Productos
             </VToolbarTitle>
-            <VBtn class="me-2" prepend-icon="mdi-plus" rounded="lg" @submit="createProduct" text="Añadir Producto"
+            <VBtn class="me-2" prepend-icon="mdi-plus" rounded="lg" text="Añadir Producto" @click="openDialog(false)"
               border />
-            <Parent :is-edit="false" />
           </VToolbar>
         </template>
 
@@ -64,11 +87,10 @@ const deleteProduct = async (id: number) => {
         <template #item.actions="{ item }">
           <div class="d-flex ga-2 justify-end">
             <div>
-              <VBtn icon="mdi-pencil" size="small" variant="text" />
-              <Parent :is-edit="true" :model-value="item" @submit="(data) => updateProduct(item.id, data)" />
+              <VBtn icon="mdi-pencil" size="small" variant="text" @click="openDialog(true, item)" />
             </div>
             <div>
-              <VBtn icon="mdi-delete" size="small" variant="text" @click="deleteProduct(item.id)" />
+              <VBtn icon="mdi-delete" size="small" variant="text" @click="openDeleteDialog(item)" />
             </div>
           </div>
         </template>
@@ -77,6 +99,9 @@ const deleteProduct = async (id: number) => {
           No se han encontrado productos.
         </template>
       </VDataTable>
+      <VSnackbar v-model="showSuccess">
+        {{ textSuccess }}
+      </VSnackbar>
     </ClientOnly>
   </VSheet>
 </template>

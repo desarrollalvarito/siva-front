@@ -1,44 +1,23 @@
-import type { Product } from '@/types/product'
+import type { Product } from '@/types/model'
 
 export const useProduct = () => {
   const baseURL = urlToApiBase('/product')
   const product = ref<Product | null>(null)
+  const products = ref<Product[]>([])
   const loading = ref(false)
-  const error = ref<string | null>(null)
-
-  const fetchProduct = async (id: number) => {
-    loading.value = true
-    error.value = null
-
-    try {
-      const { data, error: fetchError } = await useFetch<Product>(`/api/products/${id}`, {
-        server: false,
-        lazy: false
-      })
-      if (fetchError.value)
-        throw fetchError.value
-      product.value = data.value || null
-    }
-    catch (err: any) {
-      error.value = err.message || 'Failed to fetch product'
-    }
-    finally {
-      loading.value = false
-    }
-  }
+  const error = ref<any | null>(null)
 
   const createProduct = async (payload: Product) => {
-    console.log(payload);
     return await $fetch<Product>(`${baseURL}/add`, {
       method: 'POST',
-      body: payload,
+      body: payload
     })
   }
 
-  const updateProduct = async (id: number, payload: Product) => {
-    return await $fetch<Product>(`/api/products/${id}`, {
+  const updateProduct = async (payload: Product) => {
+    return await $fetch<Product>(`${baseURL}/modify`, {
       method: 'PUT',
-      body: payload,
+      body: payload
     })
   }
 
@@ -49,11 +28,28 @@ export const useProduct = () => {
     })
   }
 
+  const fetchProducts = async () => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const data = await $fetch<Product[]>(`${baseURL}/list`)
+      products.value = data
+    }
+    catch (error: any) {
+      error.value = error.message || 'Fallo al obtener los productos'
+    }
+    finally {
+      loading.value = false
+    }
+  }
+
   return {
     product,
+    products,
     loading,
     error,
-    fetchProduct,
+    fetchProducts,
     createProduct,
     updateProduct,
     deleteProduct,

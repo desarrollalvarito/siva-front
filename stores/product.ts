@@ -1,5 +1,5 @@
+import type { Product } from '@/types/model'
 import { defineStore } from 'pinia'
-import type { Product } from '~/types/product'
 
 const config = useRuntimeConfig()
 
