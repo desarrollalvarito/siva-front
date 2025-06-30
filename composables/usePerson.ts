@@ -15,6 +15,7 @@ export const usePerson = () => {
   }
 
   const updatePerson = async (payload: Person) => {
+    console.log(payload)
     return await $fetch<Person>(`${baseURL}/modify`, {
       method: 'PUT',
       body: payload,

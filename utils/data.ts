@@ -3,26 +3,26 @@ export default () => {
 }
 
 export const jobRoles = [
-  { title: 'Gerente', value: 1 },
-  { title: 'Administrador', value: 2 },
-  { title: 'Hornero', value: 3 },
-  { title: 'Repartidor', value: 4 },
-  { title: 'Cajero', value: 5 },
+  { title: 'Gerente', value: 'Gerente' },
+  { title: 'Administrador', value: "Administrador" },
+  { title: 'Hornero', value: "Hornero" },
+  { title: 'Repartidor', value: "Repartidor" },
+  { title: 'Cajero', value: "Cajero" },
 ]
 
 export const workShifts = [
-  { title: 'Mañana', value: 'M' },
-  { title: 'Tarde', value: 'T' },
-  { title: 'Noche', value: 'N' },
-  { title: 'Rotativo', value: 'R' },
-  { title: 'Media Jornada', value: 'MJ' },
-  { title: 'Jornada Completa', value: 'JC' },
+  { title: 'Mañana', value: 'Mañana' },
+  { title: 'Tarde', value: 'Tarde' },
+  { title: 'Noche', value: 'Noche' },
+  { title: 'Rotativo', value: 'Rotativo' },
+  { title: 'Media Jornada', value: 'Media Jornada' },
+  { title: 'Jornada Completa', value: 'Jornada Completa' },
 ]
 
 export const genderList = [
-  { title: 'Masculino', value: 'M' },
-  { title: 'Femenino', value: 'F' },
-  { title: 'Otro', value: 'O' },
+  { title: 'Masculino', value: 'Masculino' },
+  { title: 'Femenino', value: 'Femenino' },
+  { title: 'Otro', value: 'Otro' },
 ]
 
 export const stateList = [

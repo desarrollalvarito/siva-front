@@ -1,3 +1,4 @@
+
 export default {
   IconBtn: {
     icon: true,
@@ -196,6 +197,12 @@ export default {
     touchless: true,
   },
   VDateInput: {
+    variant: 'outlined',
+    density: 'comfortable',
+    color: 'primary',
+    hideDetails: 'auto',
+  },
+  VDatePicker: {
     variant: 'outlined',
     density: 'comfortable',
     color: 'primary',

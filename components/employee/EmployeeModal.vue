@@ -24,7 +24,7 @@ const isNewPerson = ref(false)
 const form = ref<Employee>({
   workShift: '',
   jobRole: '',
-  idPerson: 0,
+  personId: 0,
   person: {
     id: 0,
     run: '',
@@ -32,7 +32,7 @@ const form = ref<Employee>({
     lastName: '',
     gender: '',
     address: '',
-    birthDate: '',
+    birthDate: null,
     contact: '',
   },
 })
@@ -46,7 +46,7 @@ const resetForm = () => {
   form.value = {
     workShift: '',
     jobRole: '',
-    idPerson: 0,
+    personId: 0,
     person: {
       id: 0,
       run: '',
@@ -54,7 +54,7 @@ const resetForm = () => {
       lastName: '',
       gender: '',
       address: '',
-      birthDate: '',
+      birthDate: null,
       contact: '',
     },
   }
@@ -76,14 +76,14 @@ watch(() => props.employee, newVal => {
 
 // Método para habilitar campos
 const fieldsEnabled = computed(() => {
-  return isEditing.value || isNewPerson.value || form.value.idPerson > 0
+  return isEditing.value || isNewPerson.value || form.value.personId > 0 ? true : false
 })
 
 const handleRunSelect = (personId: number) => {
   if (personId === 0) {
     // Caso para nuevo RUN
     isNewPerson.value = true
-    form.value.idPerson = 0
+    form.value.personId = 0
     form.value.person.run = search.value
     return
   }
@@ -91,7 +91,7 @@ const handleRunSelect = (personId: number) => {
   const selected = peoople.value.find(p => p.id === personId)
   if (selected) {
     form.value.person = { ...selected }
-    form.value.idPerson = selected.id
+    form.value.personId = selected.id
     isNewPerson.value = false
     search.value = selected.run
   }
@@ -99,7 +99,7 @@ const handleRunSelect = (personId: number) => {
 
 const registerNewRun = () => {
   isNewPerson.value = true
-  form.value.idPerson = 0
+  form.value.personId = 0
   form.value.person.run = search.value
   autocompleteOpen.value = false
   nextTick(() => {
@@ -125,14 +125,15 @@ onMounted(fetchPeoople)
     <VForm @submit.prevent="submitForm">
       <VCard :title="`${isEdit ? 'Modificar' : 'Nuevo'} empleado`">
         <VCardText>
+          {{ fieldsEnabled }}
           <VCard title="Datos Personales" class="mb-4" variant="outlined">
             <VCardText>
               <VRow>
                 <VCol cols="12" md="9">
-                  <VAutocomplete v-if="!isEditing" v-model="form.idPerson" :items="peoople" label="Buscar por RUN"
-                    item-title="run" item-value="id" placeholder="12345678-9" clearable :hide-no-data="false"
-                    :search="search" @update:search="val => search = val" @update:model-value="handleRunSelect"
-                    :rules="[required]" :open="autocompleteOpen" :menu-props="{ closeOnContentClick: true }">
+                  <VAutocomplete v-model="form.person.run" :items="peoople" label="Buscar por RUN" item-title="run"
+                    item-value="id" placeholder="12345678-9" clearable :hide-no-data="false" :search="search"
+                    @update:search="val => search = val" @update:model-value="handleRunSelect" :rules="[required]"
+                    :disabled="fieldsEnabled">
                     <template #item="{ props, item }">
                       <VListItem v-bind="props" :subtitle="`${item.raw.names} ${item.raw.lastName}`"
                         :title="item.raw.run" />
@@ -145,7 +146,6 @@ onMounted(fetchPeoople)
                       </VListItem>
                     </template>
                   </VAutocomplete>
-                  <VTextField v-else v-model="form.person.run" label="RUN" readonly />
                 </VCol>
               </VRow>
               <VAlert v-if="isNewPerson" type="info" class="mb-4">
@@ -168,7 +168,8 @@ onMounted(fetchPeoople)
                 </VCol>
                 <VCol cols="12" md="6">
                   <VDateInput v-model="form.person.birthDate" label="Fecha de nacimiento" placeholder="01/01/1991"
-                    prepend-icon="" :disabled="!fieldsEnabled" />
+                    prepend-icon="" :disabled="!fieldsEnabled" display-format="YY-MM-AA"
+                    :max="new Date().toISOString().split('T')[0]" />
                 </VCol>
               </VRow>
               <VRow>

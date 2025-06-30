@@ -12,11 +12,11 @@ const successMessage = ref('')
 const editable = shallowRef(true)
 const editableRUN = shallowRef(false)
 const search = ref<string>('')
-const employeeEmpty = {
+const employeeEmpty = <Employee>{
   id: undefined,
   workShift: '',
   jobRole: '',
-  idPerson: 0,
+  personId: 0,
   person: {
     id: 0,
     run: '',
@@ -24,7 +24,7 @@ const employeeEmpty = {
     lastName: '',
     gender: '',
     address: '',
-    birthDate: '',
+    birthDate: null,
     contact: '',
   },
 }
@@ -47,12 +47,16 @@ const handleSubmit = async (employee: Employee) => {
   try {
     loading.value = true
     if (isEditMode.value) {
+      if (JSON.stringify(selectedEmployee.value?.person) != JSON.stringify(employee.person)) {
+        console.log(employee.person)
+        await updatePerson(employee.person)
+      }
       await updateEmployee(employee)
     } else {
       // Para nuevos empleados, primero crear persona si es necesario
-      if (employee.idPerson === 0) {
+      if (employee.personId === 0) {
         const newPerson = await createPerson(employee.person)
-        employee.idPerson = newPerson.id
+        employee.personId = newPerson.id
       }
       await createEmployee(employee)
     }
