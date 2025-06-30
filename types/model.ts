@@ -6,7 +6,7 @@ export interface Product {
 }
 
 export interface Person {
-  id?: number
+  id: number
   run: string
   names: string
   lastName: string
@@ -14,7 +14,6 @@ export interface Person {
   contact?: string
   gender: string
   birthDate?: string
-  userAt?: number
 }
 
 export interface Employee {

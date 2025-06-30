@@ -1,12 +1,11 @@
 <script lang="ts" setup>
 import type { Product } from '@/types/model'
-import { onMounted, ref } from 'vue'
 
 const { products, loading, error, fetchProducts, createProduct, updateProduct, deleteProduct } = useProduct()
 const dialogOpen = ref(false)
 const isEditMode = ref(false)
 const selectedProduct = ref<Product | null>(null)
-const deleteDialog = ref();
+const deleteDialog = ref()
 const showSuccess = ref(false)
 const textSuccess = ref('')
 
@@ -14,37 +13,39 @@ onMounted(fetchProducts)
 
 // Métodos CRUD
 const openDialog = (edit: boolean, product: Product | null = null) => {
-  isEditMode.value = edit;
+  isEditMode.value = edit
   if (product) {
     // Si es edición, asignar el producto seleccionado
-    selectedProduct.value = { ...product }; // Clonar para evitar mutaciones directas
-  } else {
-    // Si es creación, reiniciar el formulario
-    selectedProduct.value = { name: '', price: 0 };
+    selectedProduct.value = { ...product } // Clonar para evitar mutaciones directas
   }
-  dialogOpen.value = true;
-};
+  else {
+    // Si es creación, reiniciar el formulario
+    selectedProduct.value = null
+  }
+  dialogOpen.value = true
+}
 
 const openDeleteDialog = (product: Product) => {
-  selectedProduct.value = product;
-  deleteDialog.value?.open();
-};
+  selectedProduct.value = product
+  deleteDialog.value?.open()
+}
 
 const handleSubmit = async (product: Product) => {
   product.userAt = 1
   if (isEditMode.value && product.id) {
     // Actualizar
-    await updateProduct(product);
+    await updateProduct(product)
     textSuccess.value = 'Producto modificado Satisfactoriamente'
     showSuccess.value = true
-  } else {
+  }
+  else {
     // Crear (simula ID autoincremental)
     await createProduct(product)
     textSuccess.value = 'Producto creado Satisfactoriamente'
     showSuccess.value = true
   }
-  await fetchProducts();
-};
+  await fetchProducts()
+}
 
 const handleDelete = async () => {
   await deleteProduct(selectedProduct?.value?.id)
@@ -52,7 +53,6 @@ const handleDelete = async () => {
   showSuccess.value = true
   await fetchProducts()
 }
-
 </script>
 
 <template>
@@ -71,8 +71,8 @@ const handleDelete = async () => {
               <VIcon color="medium-emphasis" icon="mdi-food" size="x-small" start />
               Productos
             </VToolbarTitle>
-            <VBtn class="me-2" prepend-icon="mdi-plus" rounded="lg" text="Añadir Producto" @click="openDialog(false)"
-              border />
+            <VBtn class="me-2" prepend-icon="mdi-plus" rounded="lg" text="Añadir Producto" border
+              @click="openDialog(false, null)" />
           </VToolbar>
         </template>
 
@@ -86,17 +86,12 @@ const handleDelete = async () => {
 
         <template #item.actions="{ item }">
           <div class="d-flex ga-2 justify-end">
-            <div>
-              <VBtn icon="mdi-pencil" size="small" variant="text" @click="openDialog(true, item)" />
-            </div>
-            <div>
-              <VBtn icon="mdi-delete" size="small" variant="text" @click="openDeleteDialog(item)" />
-            </div>
+            <VBtn icon="mdi-pencil" size="small" variant="text" @click="openDialog(true, item)" />
+            <VBtn icon="mdi-delete" size="small" variant="text" @click="openDeleteDialog(item)" />
           </div>
         </template>
-
         <template #no-data>
-          No se han encontrado productos.
+          No se han encontrado registros.
         </template>
       </VDataTable>
       <VSnackbar v-model="showSuccess">
