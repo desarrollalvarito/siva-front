@@ -2,16 +2,13 @@
 import type { Employee } from '@/types/model'
 
 const { employees, loading, error, fetchEmployees, createEmployee, updateEmployee, deleteEmployee } = useEmployee()
-const { peoople, error: errorPerson, fetchPeoople, createPerson, updatePerson } = usePerson()
+const { error: errorPerson, createPerson, updatePerson } = usePerson()
 const dialogOpen = ref(false)
 const isEditMode = ref(false)
 const selectedEmployee = ref<Employee | null>(null)
 const deleteDialog = ref()
 const showSuccess = ref(false)
 const successMessage = ref('')
-const editable = shallowRef(true)
-const editableRUN = shallowRef(false)
-const search = ref<string>('')
 const employeeEmpty = <Employee>{
   id: undefined,
   workShift: '',
@@ -24,7 +21,7 @@ const employeeEmpty = <Employee>{
     lastName: '',
     gender: '',
     address: '',
-    birthDate: null,
+    birthdate: null,
     contact: '',
   },
 }

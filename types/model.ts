@@ -13,7 +13,7 @@ export interface Person {
   address?: string
   contact?: string
   gender: string
-  birthDate: Date | null
+  birthdate: Date
 }
 
 export interface Employee {

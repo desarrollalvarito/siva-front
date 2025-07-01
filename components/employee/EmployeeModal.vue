@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Employee } from '@/types/model';
+import { format } from 'date-fns';
 import { VDateInput } from 'vuetify/labs/components';
 
 const props = defineProps<{
@@ -14,7 +15,7 @@ const emit = defineEmits<{
 }>()
 
 
-const { peoople, fetchPeoople } = usePerson()
+const { people, fetchPeople } = usePerson()
 const search = ref('')
 const autocompleteOpen = ref(false)
 const isEditing = computed(() => props.isEdit && props.employee?.id)
@@ -32,7 +33,7 @@ const form = ref<Employee>({
     lastName: '',
     gender: '',
     address: '',
-    birthDate: null,
+    birthdate: null,
     contact: '',
   },
 })
@@ -54,12 +55,24 @@ const resetForm = () => {
       lastName: '',
       gender: '',
       address: '',
-      birthDate: null,
+      birthdate: null,
       contact: '',
     },
   }
   search.value = ''
   isNewPerson.value = false
+}
+
+// Formatear para mostrar
+const formatDisplayDate = (date: any) => {
+  if (!date) return ''
+  return format(new Date(date), 'dd/MM/yyyy')
+}
+
+// Formatear para el modelo (backend)
+const formatModelDate = (date: any) => {
+  if (!date) return null
+  return format(new Date(date), 'yyyy-MM-dd')
 }
 
 // Sincronizar props al formulario
@@ -88,7 +101,7 @@ const handleRunSelect = (personId: number) => {
     return
   }
 
-  const selected = peoople.value.find(p => p.id === personId)
+  const selected = people.value.find(p => p.id === personId)
   if (selected) {
     form.value.person = { ...selected }
     form.value.personId = selected.id
@@ -117,7 +130,7 @@ const cancel = () => {
   emit('update:modelValue', false)
 }
 
-onMounted(fetchPeoople)
+onMounted(fetchPeople)
 </script>
 
 <template>
@@ -130,7 +143,7 @@ onMounted(fetchPeoople)
             <VCardText>
               <VRow>
                 <VCol cols="12" md="9">
-                  <VAutocomplete v-model="form.person.run" :items="peoople" label="Buscar por RUN" item-title="run"
+                  <VAutocomplete v-model="form.person.run" :items="people" label="Buscar por RUN" item-title="run"
                     item-value="id" placeholder="12345678-9" clearable :hide-no-data="false" :search="search"
                     @update:search="val => search = val" @update:model-value="handleRunSelect" :rules="[required]"
                     :disabled="fieldsEnabled">
@@ -167,9 +180,9 @@ onMounted(fetchPeoople)
                     :items="genderList" :disabled="!fieldsEnabled" />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VDateInput v-model="form.person.birthDate" label="Fecha de nacimiento" placeholder="01/01/1991"
-                    prepend-icon="" :disabled="!fieldsEnabled" display-format="YY-MM-AA"
-                    :max="new Date().toISOString().split('T')[0]" />
+                  <VDateInput v-model="form.person.birthdate" label="Fecha de nacimiento" placeholder="01/01/1991"
+                    prepend-icon="" :disabled="!fieldsEnabled" :display-format="formatDisplayDate"
+                    :model-format="formatModelDate" />
                 </VCol>
               </VRow>
               <VRow>
