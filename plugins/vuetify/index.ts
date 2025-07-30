@@ -9,9 +9,20 @@ import { themes } from './theme'
 import '@core/scss/template/libs/vuetify/index.scss'
 import 'vuetify/styles'
 
+import { es } from 'vuetify/locale'
+
 export default defineNuxtPlugin(nuxtApp => {
   const vuetify = createVuetify({
     ssr: true,
+    locale: {
+      locale: 'es',
+      messages: { es }
+    },
+    date: {
+      locale: {
+        es: 'es-BO'
+      }
+    },
     aliases: {
       IconBtn: VBtn,
     },

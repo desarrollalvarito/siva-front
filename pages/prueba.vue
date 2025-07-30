@@ -1,6 +1,9 @@
 <script lang="ts" setup>
 import { onMounted, ref, shallowRef } from 'vue'
+import { useDate } from 'vuetify'
 import { VDateInput } from 'vuetify/labs/components'
+
+const adapter = useDate()
 
 interface EmployeeRecord {
   id: number | null
@@ -13,7 +16,7 @@ interface EmployeeRecord {
   jobRole: string | null
   workShift: string | null
   gender: string | null
-  birthDate: string | null
+  birthdate: string | Object | null | unknown
 }
 
 const config = useRuntimeConfig()
@@ -33,7 +36,7 @@ const record = ref<EmployeeRecord>({
   jobRole: null,
   workShift: null,
   gender: null,
-  birthDate: null,
+  birthdate: null,
 })
 
 const dialog = shallowRef(false)
@@ -54,6 +57,8 @@ const vaciarRecord = () => {
     contact: null,
     jobRole: null,
     workShift: null,
+    gender: null,
+    birthdate: null
   }
 }
 
@@ -76,7 +81,7 @@ const onSelectedRun = (id: number) => {
     record.value.names = found.names
     record.value.lastName = found.lastName
     record.value.gender = found.gender
-    record.value.birthDate = found.birthDate
+    record.value.birthdate = found.birthdate
     record.value.address = found.address
     record.value.contact = found.contact
     editable.value = false
@@ -109,7 +114,10 @@ const edit = (id: number) => {
   editable.value = false
   editableRUN.value = false
 
-  const found = employees.value.find(item => item.id === id)
+  const found = employees?.value?.find(item => item.id === id)
+  console.log(found?.person?.birthdate.split('T')[0]);
+  var x = adapter.parseISO(found?.person?.birthdate)
+  console.log(x, typeof (x));
 
   record.value = {
     id: found.id,
@@ -122,9 +130,8 @@ const edit = (id: number) => {
     address: found.person.address,
     contact: found.person.contact,
     gender: found.person.gender,
-    birthDate: found.person.birthDate,
+    birthdate: adapter.date(new Date(found.person.birthdate).toISOString().split('T')[0]), // Formatear a YYYY-MM-DD
   }
-
   dialog.value = true
 }
 
@@ -161,7 +168,7 @@ async function save() {
         jobRole: record.value.jobRole,
         workShift: record.value.workShift,
         gender: record.value.gender,
-        birthDate: record.value.birthDate,
+        birthdate: record.value.birthdate,
         userAt: userId,
       },
     })
@@ -199,6 +206,16 @@ async function save() {
 function reset() {
   dialog.value = false
   vaciarRecord()
+}
+
+function ver() {
+  console.log(record.value.birthdate)
+  console.log(typeof (record.value.birthdate))
+  console.log(adapter.toISO(record.value.birthdate))
+}
+
+function format(date: any) {
+  return adapter.toISO(date)
 }
 </script>
 
@@ -285,8 +302,10 @@ function reset() {
                     :disabled="editable" />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VDateInput v-model="record.birthDate" label="Fecha de nacimiento" placeholder="01/01/1991"
-                    prepend-icon="" :disabled="editable" />
+                  <VLocaleProvider locale="es">
+                    <VDateInput v-model="record.birthdate" label="Fecha de nacimiento" placeholder="1991/01/01"
+                      :display-format="format" prepend-icon="" :disabled="editable" />
+                  </VLocaleProvider>
                 </VCol>
               </VRow>
               <VRow>
@@ -320,6 +339,7 @@ function reset() {
         <VCardActions class="bg-surface-light">
           <VBtn text="Cancelar" variant="plain" @click="dialog = false" />
           <VSpacer />
+          <VBtn text="Ver" @click="ver" />
           <VBtn text="Guardar" @click="save" />
         </VCardActions>
       </VCard>
