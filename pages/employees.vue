@@ -44,12 +44,10 @@ const handleSubmit = async (employee: Employee) => {
   try {
     loading.value = true
     if (isEditMode.value) {
-      if (JSON.stringify(selectedEmployee.value?.person) != JSON.stringify(employee.person)) {
-        console.log(employee.person)
-        await updatePerson(employee.person)
-      }
+      await updatePerson(employee.person)
       await updateEmployee(employee)
-    } else {
+    }
+    else {
       // Para nuevos empleados, primero crear persona si es necesario
       if (employee.personId === 0) {
         const newPerson = await createPerson(employee.person)
@@ -57,7 +55,7 @@ const handleSubmit = async (employee: Employee) => {
       }
       await createEmployee(employee)
     }
-    successMessage.value = `Empleado ${isEditMode.value ? 'actualizado' : 'creado'}`
+    successMessage.value = `Empleado ${isEditMode.value ? 'actualizado' : 'creado'} satisfactoriamente`
     showSuccess.value = true
     fetchEmployees()
   } catch (error) {
@@ -82,7 +80,8 @@ const handleDelete = async () => {
       <VAlert v-if="error" type="error" class="mt-4" icon="mdi-database-off">
         Error de obtencion de datos: {{ error }}
       </VAlert>
-      <DeleteModal ref="deleteDialog" tag="Empleado" :name="selectedEmployee?.person?.names" @confirm="handleDelete" />
+      <DeleteModal ref="deleteDialog" tag="Empleado" :name="selectedEmployee?.person?.names ?? ''"
+        @confirm="handleDelete" />
       <EmployeeModal v-model="dialogOpen" :is-edit="isEditMode" :employee="selectedEmployee" @submit="handleSubmit" />
       <VDataTable :headers="headersEmployees" :hide-default-footer="employees?.length < 11" :items="employees"
         :loading="loading" loading-text="Cargando empleados...">
@@ -108,8 +107,8 @@ const handleDelete = async () => {
 
         <template #item.actions="{ item }">
           <div class="d-flex ga-2 justify-end">
-            <VIcon icon="mdi-pencil" size="small" variant="text" @click="openDialog(true, item)" />
-            <VIcon icon="mdi-delete" size="small" variant="text" @click="openDeleteDialog(item)" />
+            <VBtn icon="mdi-pencil" size="small" variant="text" @click="openDialog(true, item)" />
+            <VBtn icon="mdi-delete" size="small" variant="text" @click="openDeleteDialog(item)" />
           </div>
         </template>
         <template #no-data>

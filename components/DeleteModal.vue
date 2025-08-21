@@ -1,18 +1,18 @@
 <template>
   <VDialog v-model="dialog" max-width="400">
     <VCard>
-      <VCardTitle class="text-h6 bg-error">
+      <VCardTitle class="text-h6" :class="recovery ? 'bg-warning' : 'bg-error'">
         <VIcon icon="mdi-alert" class="mr-2" />
-        Confirmar Eliminación
+        Confirmar {{ recovery ? "Recuperacion" : "Eliminacion" }}
       </VCardTitle>
       <VCardText>
-        ¿Estás seguro de eliminar el {{ tag }}: {{ name }}?
+        ¿Estás seguro de {{ recovery ? "recuperar" : "eliminar" }} el {{ tag }} {{ name }}?
       </VCardText>
       <VCardActions>
         <VSpacer />
         <VBtn @click="dialog = false">Cancelar</VBtn>
-        <VBtn color="error" @click="confirmDelete">
-          Eliminar
+        <VBtn :color="recovery ? 'warning' : 'error'" @click="confirmDelete">
+          {{ recovery ? "Recuperar" : "Eliminar" }}
         </VBtn>
       </VCardActions>
     </VCard>
@@ -21,10 +21,11 @@
 
 <script setup lang="ts">
 
-const props = defineProps({
-  tag: String,
-  name: String
-});
+const props = defineProps<{
+  tag: string
+  name: string
+  recovery?: boolean
+}>();
 
 const emit = defineEmits(['confirm']);
 

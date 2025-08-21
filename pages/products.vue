@@ -48,10 +48,13 @@ const handleSubmit = async (product: Product) => {
 }
 
 const handleDelete = async () => {
-  await deleteProduct(selectedProduct?.value?.id)
-  textSuccess.value = 'Producto eliminado Satisfactoriamente'
-  showSuccess.value = true
-  await fetchProducts()
+  const id = selectedProduct?.value?.id
+  if (typeof id === 'number') {
+    await deleteProduct(id)
+    textSuccess.value = 'Producto eliminado Satisfactoriamente'
+    showSuccess.value = true
+    await fetchProducts()
+  }
 }
 </script>
 
@@ -61,7 +64,7 @@ const handleDelete = async () => {
       <VAlert v-if="error" type="error" class="mt-4" icon="mdi-database-off">
         Error de obtencion de datos: {{ error }}
       </VAlert>
-      <DeleteModal ref="deleteDialog" tag="Producto" :name="selectedProduct?.name" @confirm="handleDelete" />
+      <DeleteModal ref="deleteDialog" tag="Producto" :name="selectedProduct?.name ?? ''" @confirm="handleDelete" />
       <ProductModal v-model="dialogOpen" :is-edit="isEditMode" :product="selectedProduct" @submit="handleSubmit" />
       <VDataTable :headers="headersProducts" :hide-default-footer="products?.length < 11" :items="products"
         :loading="loading" loading-text="'Cargando productos...'">

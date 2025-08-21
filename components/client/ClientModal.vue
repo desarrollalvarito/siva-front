@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Employee } from '@/types/model';
+import type { Client } from '@/types/model';
 import { useDate } from 'vuetify';
 import { VDateInput } from 'vuetify/labs/components';
 
@@ -7,26 +7,27 @@ const adapter = useDate()
 
 const props = defineProps<{
   modelValue: boolean
-  employee?: Employee | null
+  client?: Client | null
   isEdit?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
-  (e: 'submit', employee: Employee): void
+  (e: 'submit', client: Client): void
 }>()
 
 
 const { people, fetchPeople } = usePerson()
 const search = ref('')
 const autocompleteOpen = ref(false)
-const isEditing = computed(() => props.isEdit && props.employee?.id)
+const isEditing = computed(() => props.isEdit && props.client?.id)
 const isNewPerson = ref(false)
 
 // Formulario reactivo
-const form = ref<Employee>({
-  workShift: '',
-  jobRole: '',
+const form = ref<Client>({
+  shippingAddress: '',
+  billName: '',
+  rut: '',
   personId: 0,
   person: {
     id: 0,
@@ -47,8 +48,9 @@ const validateRun = (v: string) => /^\d{7,8}-[kK\d]$/.test(v) || 'RUN inválido'
 
 const resetForm = () => {
   form.value = {
-    workShift: '',
-    jobRole: '',
+    shippingAddress: '',
+    billName: '',
+    rut: '',
     personId: 0,
     person: {
       id: 0,
@@ -66,7 +68,7 @@ const resetForm = () => {
 }
 
 // Sincronizar props al formulario
-watch(() => props.employee, newVal => {
+watch(() => props.client, newVal => {
   if (newVal) {
     form.value = { ...newVal }
     form.value.person.birthdate = newVal.person.birthdate ? adapter.date(new Date(newVal.person.birthdate).toISOString().split('T')[0]) : null
@@ -127,7 +129,7 @@ onMounted(fetchPeople)
 <template>
   <VDialog max-width="600" :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)">
     <VForm @submit.prevent="submitForm">
-      <VCard :title="`${isEdit ? 'Modificar' : 'Nuevo'} empleado`">
+      <VCard :title="`${isEdit ? 'Modificar' : 'Nuevo'} cliente`">
         <VCardText>
           <VCard title="Datos Personales" class="mb-4" variant="outlined">
             <VCardText>
@@ -186,15 +188,19 @@ onMounted(fetchPeople)
               </VRow>
             </VCardText>
           </VCard>
-          <VCard title="Datos Laborales" class="mb-4" variant="outlined">
+          <VCard title="RUT" class="mb-4" variant="outlined">
             <VCardText>
               <VRow>
                 <VCol cols="12" md="6">
-                  <VSelect v-model="form.jobRole" label="Cargo" placeholder="Gerente" :items="jobRoles"
+                  <VTextField v-model="form.rut" label="RUT" placeholder="12345678-9" :disabled="!fieldsEnabled"
+                    :rules="[required]" />
+                </VCol>
+                <VCol cols="12" md="6">
+                  <VTextField v-model="form.billName" label="Razon Social" placeholder="SIVA S.A."
                     :disabled="!fieldsEnabled" :rules="[required]" />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VSelect v-model="form.workShift" label="Turno" placeholder="Mañana, Tarde, Noche" :items="workShifts"
+                  <VTextField v-model="form.shippingAddress" label="Direccion de entrega" placeholder="Av. 18 N# 5"
                     :disabled="!fieldsEnabled" :rules="[required]" />
                 </VCol>
               </VRow>

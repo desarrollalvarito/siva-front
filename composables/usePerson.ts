@@ -21,9 +21,6 @@ export const usePerson = () => {
         method: 'POST',
         body: payload,
       })
-      person.value = data // Actualizar estado
-      people.value.push(data) // Añadir a la lista
-      return data
     } catch (err) {
       return handleApiError(err)
     }
@@ -36,11 +33,6 @@ export const usePerson = () => {
         method: 'PUT',
         body: payload,
       })
-      person.value = data
-      // Actualizar en la lista
-      const index = people.value.findIndex(p => p.id === payload.id)
-      if (index !== -1) people.value[index] = data
-      return data
     } catch (err) {
       return handleApiError(err)
     }
@@ -53,9 +45,6 @@ export const usePerson = () => {
         method: 'DELETE',
         body: { id },
       })
-      // Eliminar de la lista
-      people.value = people.value.filter(p => p.id !== id)
-      return data
     } catch (err) {
       return handleApiError(err)
     }

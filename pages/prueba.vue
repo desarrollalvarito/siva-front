@@ -115,9 +115,6 @@ const edit = (id: number) => {
   editableRUN.value = false
 
   const found = employees?.value?.find(item => item.id === id)
-  console.log(found?.person?.birthdate.split('T')[0]);
-  var x = adapter.parseISO(found?.person?.birthdate)
-  console.log(x, typeof (x));
 
   record.value = {
     id: found.id,
@@ -147,7 +144,6 @@ async function remove(id: number) {
   }
   else {
     const index = employees.value.findIndex(item => item.id === id)
-
     employees.value.splice(index, 1)
   }
 }
@@ -302,10 +298,8 @@ function format(date: any) {
                     :disabled="editable" />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VLocaleProvider locale="es">
-                    <VDateInput v-model="record.birthdate" label="Fecha de nacimiento" placeholder="1991/01/01"
-                      :display-format="format" prepend-icon="" :disabled="editable" />
-                  </VLocaleProvider>
+                  <VDateInput v-model="record.birthdate" label="Fecha de nacimiento" placeholder="1991/01/01"
+                    :display-format="format" prepend-icon="" :disabled="editable" />
                 </VCol>
               </VRow>
               <VRow>
