@@ -23,6 +23,9 @@ const search = ref('')
 const isEditing = computed(() => props.isEdit && props.order?.id)
 const selectedProduct = ref<Product | null>(null)
 const productQuantity = ref(1)
+// Fechas mínima y máxima
+const minDate = new Date().toISOString().split('T')[0]
+const maxDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
 // Formulario reactivo
 const form = ref<Order>({
@@ -30,7 +33,7 @@ const form = ref<Order>({
   date: null,
   quantity: 0,
   state: '',
-  client: { id: 0, billName: '', rut: '', shippingAddress: '', personId: 0 },
+  client: { id: 0, billName: '', rut: '', shippingAddress: '', personId: 0, person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null } },
   orderProduct: []
 })
 
@@ -50,7 +53,7 @@ const resetForm = () => {
     date: null,
     quantity: 0,
     state: '',
-    client: { id: 0, billName: '', rut: '', shippingAddress: '', personId: 0 },
+    client: { id: 0, billName: '', rut: '', shippingAddress: '', personId: 0, person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null } },
     orderProduct: []
   }
   search.value = ''
@@ -68,7 +71,7 @@ watch(() => props.order, newVal => {
     search.value = newVal.client.rut || ''
     selectedProduct.value = null // Reiniciar selección de producto
     productQuantity.value = 1 // Reiniciar cantidad de producto
-    form.value.date = newVal.date ? adapter.date(new Date(newVal.date).toISOString().split('T')[0]) : null
+    form.value.date = newVal.date ? adapter.date(new Date(newVal.date).toISOString().split('T')[0]) : new Date()
   } else {
     resetForm()
   }
@@ -177,7 +180,7 @@ onMounted(async () => {
             </VCol>
             <VCol cols="12" md="6">
               <VDateInput v-model="form.date" label="Fecha de pedido" placeholder="01/01/1991" prepend-icon=""
-                :rules="[required]" :disabled="!fieldsEnabled" />
+                :rules="[required]" :disabled="!fieldsEnabled" :min="minDate" :max="maxDate" />
             </VCol>
           </VRow>
           <VDivider class="my-4" />

@@ -68,7 +68,7 @@ const resetForm = () => {
 // Sincronizar props al formulario
 watch(() => props.employee, newVal => {
   if (newVal) {
-    form.value = { ...newVal }
+    form.value = JSON.parse(JSON.stringify(newVal))
     form.value.person.birthdate = newVal.person.birthdate ? adapter.date(new Date(newVal.person.birthdate).toISOString().split('T')[0]) : null
     isNewPerson.value = false
     search.value = newVal.person.run
@@ -106,9 +106,6 @@ const registerNewRun = () => {
   form.value.personId = 0
   form.value.person.run = search.value
   autocompleteOpen.value = false
-  nextTick(() => {
-    // Forzar actualización de UI si es necesario
-  })
 }
 
 const submitForm = () => {

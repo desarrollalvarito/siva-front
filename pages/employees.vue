@@ -72,6 +72,10 @@ const handleDelete = async () => {
   showSuccess.value = true
   fetchEmployees()
 }
+
+const formatValue = (value: string) => {
+  return jobRoles.find(role => role.value === value)?.title || value
+}
 </script>
 
 <template>
@@ -97,12 +101,8 @@ const handleDelete = async () => {
           </VToolbar>
         </template>
 
-        <template #item.title="{ value }">
-          <VChip :text="value" border="thin opacity-25" prepend-icon="mdi-item" label>
-            <template #prepend>
-              <VIcon color="medium-emphasis" />
-            </template>
-          </VChip>
+        <template #item.jobRole="{ value }">
+          {{ formatValue(value) }}
         </template>
 
         <template #item.actions="{ item }">

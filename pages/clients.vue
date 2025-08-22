@@ -92,20 +92,10 @@ const handleDelete = async () => {
               <VIcon color="medium-emphasis" icon="mdi-account-group" size="x-small" start />
               Clientes
             </VToolbarTitle>
-
             <VBtn class="me-2" prepend-icon="mdi-plus" rounded="lg" text="Añadir Cliente" border
               @click="openDialog(false)" />
           </VToolbar>
         </template>
-
-        <template #item.title="{ value }">
-          <VChip :text="value" border="thin opacity-25" prepend-icon="mdi-item" label>
-            <template #prepend>
-              <VIcon color="medium-emphasis" />
-            </template>
-          </VChip>
-        </template>
-
         <template #item.actions="{ item }">
           <div class="d-flex ga-2 justify-end">
             <VBtn icon="mdi-pencil" size="small" variant="text" @click="openDialog(true, item)" />

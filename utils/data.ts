@@ -30,19 +30,24 @@ export const stateList = [
   { title: 'Inactivo', value: 'INACTIVE' },
 ]
 
+export const orderState = [
+  { title: 'Pendiente', value: 'PENDING' },
+  { title: 'Entregado', value: 'COMPLETED' },
+  { title: 'Cancelado', value: 'CANCELLED' },
+]
+
 export const headersEmployees = [
   { title: 'RUN', key: 'person.run', align: 'start' },
-  { title: 'Nombre', key: 'fullName', value: (item: any) => `${item.person.names} ${item.person.lastName}` },
-  { title: 'Cargo', key: 'jobRole' },
-  { title: 'Turno', key: 'workShift' },
-  { title: 'Domicilio', key: 'person.address' },
-  { title: 'Celular', key: 'person.contact' },
+  { title: 'Nombre', key: 'fullName', value: (item: any) => `${item.person.names} ${item.person.lastName}`, align: 'start' },
+  { title: 'Cargo', key: 'jobRole', align: 'start' },
+  { title: 'Turno', key: 'workShift', align: 'center' },
+  { title: 'Domicilio', key: 'person.address', align: 'center' },
+  { title: 'Celular', key: 'person.contact', align: 'center' },
   { title: 'Opciones', key: 'actions', align: 'end', sortable: false },
 ]
 
 export const headersProducts = [
-  { title: 'ID', key: 'id', align: 'start' },
-  { title: 'Producto', key: 'name' },
+  { title: 'Producto', key: 'name', align: 'start' },
   { title: 'Precio', key: 'price', value: (item: any) => `$ ${item.price}`, align: 'end' },
   { title: 'Opciones', key: 'actions', align: 'end', sortable: false },
 ]
@@ -57,19 +62,16 @@ export const headersOrderProducts = [
 
 export const headersClients = [
   { title: 'RUT', key: 'rut', align: 'start' },
-  { title: 'RUN', key: 'person.run' },
-  { title: 'Nombre del RUT', key: 'billName' },
-  { title: 'Nombre', key: 'fullName', value: (item: any) => `${item.person.names} ${item.person.lastName}` },
-  { title: 'Direccion de entrega', key: 'shippingAddress' },
-  { title: 'Domicilio', key: 'person.address' },
-  { title: 'Celular', key: 'person.contact' },
+  { title: 'Cliente', key: 'billName', align: 'center' },
+  { title: 'Nombre', key: 'fullName', value: (item: any) => `${item.person.names} ${item.person.lastName}`, align: 'center' },
+  { title: 'Direccion de entrega', key: 'shippingAddress', align: 'center' },
+  { title: 'Celular', key: 'person.contact', align: 'center' },
   { title: 'Opciones', key: 'actions', align: 'end', sortable: false },
 ]
 
 export const headersOrders = [
-  { title: 'ID', key: 'id', align: 'start' },
-  { title: 'Fecha', key: 'date', value: (item: any) => new Date(item.date).toISOString().split('T')[0], align: 'start' },
-  { title: 'Cliente', key: 'client.billName', align: 'start' },
+  { title: 'RUT', key: 'client.rut', align: 'start' },
+  { title: 'Cliente', key: 'client.billName', align: 'center' },
   { title: 'Cantidad', key: 'quantity', align: 'center' },
   { title: 'Estado', key: 'state', align: 'center' },
   { title: 'Acciones', key: 'actions', align: 'end', sortable: false }

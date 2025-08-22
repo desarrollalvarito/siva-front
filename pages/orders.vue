@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import type { Order } from '@/types/model'
+import type { Order } from '@/types/model';
+import { VDateInput } from 'vuetify/labs/components';
 
-const { orders, loading, error, fetchOrders, createOrder, updateOrder, deleteOrder } = useOrder()
+const { orders, loading, error, date, fetchOrders, createOrder, updateOrder, deleteOrder } = useOrder()
 const dialogOpen = ref(false)
 const isEditMode = ref(false)
 const selectedOrder = ref<Order | null>(null)
@@ -9,20 +10,15 @@ const deleteDialog = ref()
 const showSuccess = ref(false)
 const textSuccess = ref('')
 const recovery = ref(false)
-const orderEmpty = <Order>{
+const searchDate = ref<Date>(new Date())
+const orderEmpty = ref<Order>({
   id: 0,
   date: null,
   quantity: 0,
   state: '',
-  client: {
-    id: 0,
-    billName: '',
-    rut: '',
-    shippingAddress: '',
-    personId: 0,
-  },
+  client: { id: 0, billName: '', rut: '', shippingAddress: '', personId: 0, person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null } },
   orderProduct: []
-}
+})
 
 // Función para determinar el color según el estado
 const getStateColor = (state: string) => {
@@ -36,12 +32,7 @@ const getStateColor = (state: string) => {
 
 // Función para formatear el estado para mostrar
 const formatState = (state: string) => {
-  const states: Record<string, string> = {
-    PENDING: 'Pendiente',
-    COMPLETED: 'Entregado',
-    CANCELLED: 'Cancelado'
-  }
-  return states[state] || state
+  return orderState.find(item => item.value === state)?.title || state
 }
 
 // Métodos CRUD
@@ -64,7 +55,14 @@ const openDeleteDialog = (recoveryOption: boolean, order: Order) => {
   deleteDialog.value?.open()
 }
 
-onMounted(fetchOrders)
+const updateDate = () => {
+  date.value = searchDate.value.toISOString().split('T')[0]
+  fetchOrders()
+}
+
+onMounted(() => {
+  updateDate()
+})
 
 const handleSubmit = async (order: Order) => {
   try {
@@ -124,17 +122,12 @@ const handleDelete = async () => {
               <VIcon color="medium-emphasis" icon="mdi-food" size="x-small" start />
               Pedidos
             </VToolbarTitle>
+            <VDateInput v-model="searchDate" label="Fecha de pedido" placeholder="01/01/1991"
+              prepend-icon="mdi-calendar" style="max-inline-size: 250px;" class="mr-6" clearable
+              @update:model-value="updateDate" />
             <VBtn class="me-2" prepend-icon="mdi-plus" rounded="lg" text="Añadir Pedido" border
               @click="openDialog(false, orderEmpty)" />
           </VToolbar>
-        </template>
-
-        <template #item.title="{ value }">
-          <VChip :text="value" border="thin opacity-25" prepend-icon="mdi-item" label>
-            <template #prepend>
-              <VIcon color="medium-emphasis" />
-            </template>
-          </VChip>
         </template>
 
         <template #item.state="{ value }">
@@ -145,10 +138,29 @@ const handleDelete = async () => {
 
         <template #item.actions="{ item }">
           <div v-if="item.state === 'PENDING'" class="d-flex ga-2 justify-end">
-            <VBtn icon="mdi-pencil" size="small" variant="text" @click="openDialog(true, item)" />
-            <VBtn icon="mdi-close-octagon" size="small" variant="text" @click="openDeleteDialog(false, item)" />
+            <VTooltip location="bottom">
+              <template #activator="{ props: tooltipProps }">
+                <VBtn v-bind="tooltipProps" icon="mdi-pencil" size="small" variant="text"
+                  @click="openDialog(true, item)" />
+              </template>
+              <span>Editar</span>
+            </VTooltip>
+            <VTooltip location="bottom">
+              <template #activator="{ props: tooltipProps }">
+                <VBtn v-bind="tooltipProps" icon="mdi-close-circle" size="small" variant="text"
+                  @click="openDeleteDialog(false, item)" />
+              </template>
+              <span>Cancelar</span>
+            </VTooltip>
           </div>
           <div v-if="item.state === 'CANCELLED'" class="d-flex ga-2 justify-end">
+            <VTooltip location="bottom">
+              <template #activator="{ props: tooltipProps }">
+                <VBtn v-bind="tooltipProps" icon="mdi-arrow-u-left-top-bold" size="small" variant="text"
+                  @click="openDeleteDialog(true, item)" />
+              </template>
+              <span>Recuperar</span>
+            </VTooltip>
             <VBtn icon="mdi-arrow-u-left-top-bold" size="small" variant="text" @click="openDeleteDialog(true, item)" />
           </div>
         </template>

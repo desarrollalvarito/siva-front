@@ -6,6 +6,7 @@ export const useOrder = () => {
   const orders = ref<Order[]>([])
   const loading = ref(false)
   const error = ref<any | null>(null)
+  const date = ref('')
 
   const createOrder = async (payload: Order) => {
     return await $fetch<Order>(`${baseURL}/add`, {
@@ -33,7 +34,10 @@ export const useOrder = () => {
     error.value = null
 
     try {
-      const data = await $fetch<Order[]>(`${baseURL}/list`)
+      const data = await $fetch<Order[]>(`${baseURL}/list`, {
+        method: 'POST',
+        body: { date: date.value }
+      })
       orders.value = data
     }
     catch (error: any) {
@@ -49,6 +53,7 @@ export const useOrder = () => {
     orders,
     loading,
     error,
+    date,
     fetchOrders,
     createOrder,
     updateOrder,

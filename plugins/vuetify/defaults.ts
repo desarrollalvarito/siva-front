@@ -2,8 +2,6 @@
 export default {
   IconBtn: {
     icon: true,
-    color: 'default',
-    variant: 'text',
   },
   VAlert: {
     density: 'comfortable',
@@ -26,7 +24,6 @@ export default {
   VBtn: {
     // set v-btn default color to primary
     color: 'primary',
-    ripple: false,
   },
   VChip: {
     label: true,

@@ -70,10 +70,10 @@ const resetForm = () => {
 // Sincronizar props al formulario
 watch(() => props.client, newVal => {
   if (newVal) {
-    form.value = { ...newVal }
+    form.value = JSON.parse(JSON.stringify(newVal))
     form.value.person.birthdate = newVal.person.birthdate ? adapter.date(new Date(newVal.person.birthdate).toISOString().split('T')[0]) : null
     isNewPerson.value = false
-    search.value = newVal.person.run
+    search.value = newVal.person?.run ?? ''
   }
   else {
     resetForm()
@@ -90,7 +90,9 @@ const handleRunSelect = (personId: number) => {
     // Caso para nuevo RUN
     isNewPerson.value = true
     form.value.personId = 0
-    form.value.person.run = search.value
+    if (form.value.person) {
+      form.value.person.run = search.value
+    }
     return
   }
 
@@ -108,9 +110,6 @@ const registerNewRun = () => {
   form.value.personId = 0
   form.value.person.run = search.value
   autocompleteOpen.value = false
-  nextTick(() => {
-    // Forzar actualización de UI si es necesario
-  })
 }
 
 const submitForm = () => {
@@ -154,7 +153,7 @@ onMounted(fetchPeople)
                 </VCol>
               </VRow>
               <VAlert v-if="isNewPerson" type="info" class="mb-4">
-                Estás registrando un nuevo RUN: {{ form.person.run }} .
+                Estás registrando un nuevo RUN: {{ form.person?.run }} .
               </VAlert>
               <VRow>
                 <VCol cols="12" md="6">

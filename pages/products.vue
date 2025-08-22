@@ -89,8 +89,20 @@ const handleDelete = async () => {
 
         <template #item.actions="{ item }">
           <div class="d-flex ga-2 justify-end">
-            <VBtn icon="mdi-pencil" size="small" variant="text" @click="openDialog(true, item)" />
-            <VBtn icon="mdi-delete" size="small" variant="text" @click="openDeleteDialog(item)" />
+            <VTooltip location="bottom">
+              <template #activator="{ props: tooltipProps }">
+                <VBtn v-bind="tooltipProps" icon="mdi-pencil" size="small" variant="text"
+                  @click="openDialog(true, item)" />
+              </template>
+              <span>Editar</span>
+            </VTooltip>
+            <VTooltip location="bottom">
+              <template #activator="{ props: tooltipProps }">
+                <VBtn v-bind="tooltipProps" icon="mdi-delete" size="small" variant="text"
+                  @click="openDeleteDialog(item)" />
+              </template>
+              <span>Eliminar</span>
+            </VTooltip>
           </div>
         </template>
         <template #no-data>

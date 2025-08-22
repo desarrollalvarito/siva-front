@@ -1,7 +1,7 @@
 export interface Product {
   id?: number
   name: string
-  price: float
+  price: number
   userAt?: number
 }
 
@@ -30,7 +30,7 @@ export interface Client {
   billName: string
   rut: string
   personId: number
-  person?: Person
+  person: Person
 }
 
 export interface Order {
