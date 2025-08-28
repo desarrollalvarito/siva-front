@@ -147,22 +147,40 @@ export default defineNuxtConfig({
           id: 'number',
           username: 'string',
           email: 'string',
-          personId: 'number',
-          person: '{ run: string, names: string, lastName: string, gender: string, birthDate: string}',
+          person: '{ id: number, run: string, names: string, lastName: string, employee: { jobRole: string, workShift: string } }',
         },
       },
       token: {
+        signInResponseTokenPointer: '/token',
         type: 'Bearer',
         headerName: 'Authorization',
-        maxAgeInSeconds: 60 * 60 * 12, // 12 hours
-        sameSiteAttribute: 'strict',
+        cookieName: 'auth.token',
+        maxAgeInSeconds: 600, // 10 min
+        sameSiteAttribute: 'lax',
+        httpOnlyCookieAttribute: false,
       },
+      refresh: {
+        isEnabled: true,
+        endpoint: { path: '/refresh', method: 'post' },
+        refreshOnlyToken: true,
+        token: {
+          signInResponseRefreshTokenPointer: '/refreshToken',
+          refreshResponseTokenPointer: '/token',
+          cookieName: 'auth.refreshToken',
+          maxAgeInSeconds: 60 * 60 * 8,  //8 h
+          sameSiteAttribute: 'lax',
+          httpOnlyCookieAttribute: false,
+        }
+      }
     },
     sessionRefresh: {
-      enablePeriodically: 1000 * 60 * 2, // 2 hour
-      enableOnWindowFocus: false,
+      enablePeriodically: false,    // ⬅️ Desactiva refresco periódico
+      enableOnWindowFocus: false,   // ⬅️ Desactiva refresco al enfocar ventana
     },
-    globalAppMiddleware: true,
+    globalAppMiddleware: {
+      isEnabled: true,
+      addDefaultCallbackUrl: false  // ⬇️ Evita verificación excesiva en rutas públicas
+    }
   },
   compatibilityDate: '2025-06-08',
 })

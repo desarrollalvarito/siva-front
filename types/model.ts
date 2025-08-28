@@ -6,7 +6,7 @@ export interface Product {
 }
 
 export interface Person {
-  id: number
+  id?: number
   run: string
   names: string
   lastName: string
@@ -20,7 +20,6 @@ export interface Employee {
   id?: number
   jobRole: string
   workShift: string
-  personId: number
   person: Person
 
 }
@@ -29,7 +28,6 @@ export interface Client {
   shippingAddress: string
   billName: string
   rut: string
-  personId: number
   person: Person
 }
 
@@ -41,6 +39,7 @@ export interface Order {
   state: string
   userAt?: number
   orderProduct: OrderProduct[]
+  delivery?: Delivery
 }
 
 export interface OrderProduct {
@@ -50,5 +49,16 @@ export interface OrderProduct {
   aditional: boolean
   product: Product
   state?: string
+  userAt?: number
+}
+
+export interface Delivery {
+  id?: number,
+  order?: Order
+  status: string
+  driver: Employee
+  deliveryTime?: Date
+  scheduled?: Date
+  notes?: string
   userAt?: number
 }

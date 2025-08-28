@@ -18,9 +18,12 @@ const emit = defineEmits<{
 
 
 const { clients, fetchClients } = useClient()
+const { employees, fetchEmployees } = useEmployee()
 const { products, fetchProducts } = useProduct()
-const search = ref('')
+const searchClient = ref('')
+const searchDriver = ref('')
 const isEditing = computed(() => props.isEdit && props.order?.id)
+const isDelivery = ref(false)
 const selectedProduct = ref<Product | null>(null)
 const productQuantity = ref(1)
 // Fechas mínima y máxima
@@ -33,9 +36,19 @@ const form = ref<Order>({
   date: null,
   quantity: 0,
   state: '',
-  client: { id: 0, billName: '', rut: '', shippingAddress: '', personId: 0, person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null } },
-  orderProduct: []
+  client: { billName: '', rut: '', shippingAddress: '', person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null } },
+  orderProduct: [],
+  delivery: {
+    status: 'CANCELLED',
+    driver: {
+      workShift: '',
+      jobRole: '',
+      person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null }
+    }
+  }
 })
+
+const formEmpty = JSON.parse(JSON.stringify(form.value))
 
 // Reglas de validación
 const required = (v: string) => !!v || 'Campo requerido'
@@ -48,15 +61,8 @@ const notAdded = (v: Product) => {
 }
 
 const resetForm = () => {
-  form.value = {
-    id: 0,
-    date: null,
-    quantity: 0,
-    state: '',
-    client: { id: 0, billName: '', rut: '', shippingAddress: '', personId: 0, person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null } },
-    orderProduct: []
-  }
-  search.value = ''
+  form.value = JSON.parse(JSON.stringify(formEmpty))
+  searchClient.value = ''
 }
 
 // Validar si el producto seleccionado ya ha sido agregado
@@ -68,9 +74,15 @@ const isProductAdded = computed(() => {
 watch(() => props.order, newVal => {
   if (newVal) {
     form.value = JSON.parse(JSON.stringify(newVal)) // Clonar para evitar mutaciones directas
-    search.value = newVal.client.rut || ''
+    if (isNullOrUndefined(newVal.delivery)) {
+      console.log("Nulo: ", form.value.delivery, formEmpty.delivery);
+      form.value.delivery = JSON.parse(JSON.stringify(formEmpty.delivery))
+    }
+    searchClient.value = newVal.client.billName || ''
+    searchDriver.value = newVal?.delivery?.driver.person.names || ''
     selectedProduct.value = null // Reiniciar selección de producto
     productQuantity.value = 1 // Reiniciar cantidad de producto
+    form.value.delivery?.status !== "CANCELLED" ? isDelivery.value = true : isDelivery.value = false
     form.value.date = newVal.date ? adapter.date(new Date(newVal.date).toISOString().split('T')[0]) : new Date()
   } else {
     resetForm()
@@ -87,13 +99,46 @@ const handleSubmit = () => {
   emit('update:modelValue', false)
 }
 
-const handleRutSelect = (clientId: number) => {
-  const selected = clients.value.find(p => p.id === clientId)
+const handleClientSelect = (clientId: number) => {
+  const selected = clients.value.find(c => c.id === clientId)
   if (selected && typeof selected.id === 'number') {
     form.value.client = { ...selected }
-    search.value = selected.billName
+    searchClient.value = selected.billName
   }
 }
+
+const handleDriverSelect = (driverId: number) => {
+  const selected = employees.value.find(emp => emp.id === driverId)
+  if (selected) {
+    form.value.delivery.driver = { ...selected }
+    searchDriver.value = selected.person.names + " " + selected.person.lastName
+  }
+}
+
+const handleDeliverySwitch = () => {
+  if (isDelivery.value) {
+    form.value.delivery.status = "PENDING"
+  }
+  else {
+    form.value.delivery.status = "CANCELLED"
+  }
+  console.log("hola: ", isDelivery.value);
+}
+
+const employeeFiltered = computed(() => {
+  return employees.value
+    .filter(emp => {
+      // Validaciones seguras
+      if (!emp || !emp.jobRole) return false
+      return emp.jobRole.toUpperCase().includes('DELIVERY')
+    })
+    .map(emp => ({
+      ...emp,
+      displayName: `${emp.person?.names || ''} ${emp.person?.lastName || ''}`.trim() || 'Nombre no disponible',
+      // Información adicional útil
+      subtitle: `RUT: ${emp.person?.run || 'N/A'} - ${emp.jobRole || 'N/A'}`
+    }))
+})
 
 const cancel = () => {
   emit('update:modelValue', false)
@@ -141,9 +186,7 @@ const addProduct = () => {
 }
 
 const removeProduct = (item: Product) => {
-  console.log(item);
   const index = form.value.orderProduct.findIndex(op => op.product.id === item.id)
-  console.log(index);
   if (index > -1) {
     form.value.orderProduct[index].state = 'INACTIVE'
     form.value.orderProduct[index].quantity = 0
@@ -157,8 +200,9 @@ const updateTotal = () => {
 }
 
 onMounted(async () => {
-  fetchClients();
-  fetchProducts();
+  fetchClients()
+  fetchEmployees()
+  fetchProducts()
 })
 </script>
 
@@ -169,9 +213,9 @@ onMounted(async () => {
         <VCardText>
           <VRow>
             <VCol cols="12" md="6">
-              <VAutocomplete v-model="form.client.rut" :items="clients" label="Buscar por RUT" item-title="rut"
-                item-value="id" placeholder="12345678-9" clearable :hide-no-data="false" :search="search"
-                @update:search="val => search = val" @update:model-value="handleRutSelect" :rules="[required]"
+              <VAutocomplete v-model="form.client.id" :items="clients" label="Seleccionar Cliente" item-title="billName"
+                item-value="id" placeholder="Buscar Cliente por RUT" clearable :hide-no-data="false"
+                :search="searchClient" @update:model-value="handleClientSelect" :rules="[required]"
                 :disabled="fieldsEnabled">
                 <template #item="{ props, item }">
                   <VListItem v-bind="props" :subtitle="item.raw.billName" :title="item.raw.rut" />
@@ -181,6 +225,22 @@ onMounted(async () => {
             <VCol cols="12" md="6">
               <VDateInput v-model="form.date" label="Fecha de pedido" placeholder="01/01/1991" prepend-icon=""
                 :rules="[required]" :disabled="!fieldsEnabled" :min="minDate" :max="maxDate" />
+            </VCol>
+          </VRow>
+          <VRow justify="end">
+            <VCol cols="3" md="3" offset="3">
+              <VSwitch v-model="isDelivery" :label="`${isDelivery ? 'Con' : 'Sin'} entrega`" prepend-icon=""
+                :disabled="!fieldsEnabled" @update:model-value="handleDeliverySwitch" />
+            </VCol>
+            <VCol cols="6" md="6">
+              <VAutocomplete v-model="form.delivery.driver.id" :items="employeeFiltered"
+                :label="form.delivery ? 'Seleccionar conductor' : 'Active entrega para habilitar'"
+                item-title="displayName" item-value="id" placeholder="Buscar conductor" clearable
+                @update:model-value="handleDriverSelect" :disabled="!isDelivery">
+                <template #item="{ props, item }">
+                  <VListItem v-bind="props" :title="item.raw.displayName" :subtitle="item.raw.subtitle" />
+                </template>
+              </VAutocomplete>
             </VCol>
           </VRow>
           <VDivider class="my-4" />
@@ -207,16 +267,20 @@ onMounted(async () => {
               <template v-slot:item="{ item }">
                 <tr v-if="item.state !== 'INACTIVE'">
                   <td>{{ item.product.name }}</td>
-                  <td>{{ item.product.price }}</td>
+                  <td align="right">$ {{ item.product.price }}</td>
                   <td>
                     <VTextField v-model.number="item.quantity" type="number" min="1" density="compact" hide-details
                       @update:model-value="updateTotal"></VTextField>
                   </td>
-                  <td>{{ item.product.price * item.quantity }}</td>
-                  <td>
-                    <v-icon size="small" @click="removeProduct(item.product)" color="error">
-                      mdi-delete
-                    </v-icon>
+                  <td align="right">$ {{ item.product.price * item.quantity }}</td>
+                  <td align="center">
+                    <VTooltip location="bottom">
+                      <template #activator="{ props: tooltipProps }">
+                        <VIcon v-bind="tooltipProps" icon="mdi-delete" size="small" variant="text" color="error"
+                          @click="removeProduct(item.product)" />
+                      </template>
+                      <span>Eliminar</span>
+                    </VTooltip>
                   </td>
                 </tr>
               </template>

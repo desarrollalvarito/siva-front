@@ -16,8 +16,16 @@ const orderEmpty = ref<Order>({
   date: null,
   quantity: 0,
   state: '',
-  client: { id: 0, billName: '', rut: '', shippingAddress: '', personId: 0, person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null } },
-  orderProduct: []
+  client: { billName: '', rut: '', shippingAddress: '', person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null } },
+  orderProduct: [],
+  delivery: {
+    status: 'CANCELLED',
+    driver: {
+      workShift: '',
+      jobRole: '',
+      person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null }
+    }
+  }
 })
 
 // Función para determinar el color según el estado
@@ -161,7 +169,6 @@ const handleDelete = async () => {
               </template>
               <span>Recuperar</span>
             </VTooltip>
-            <VBtn icon="mdi-arrow-u-left-top-bold" size="small" variant="text" @click="openDeleteDialog(true, item)" />
           </div>
         </template>
         <template #no-data>

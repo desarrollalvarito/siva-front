@@ -4,8 +4,8 @@ export default () => {
 
 export const jobRoles = [
   { title: 'Gerente', value: 'MANAGER' },
-  { title: 'Administrador', value: "ADMINISTRATOR" },
-  { title: 'Hornero', value: "COOK" },
+  { title: 'Administrador', value: "ADMIN" },
+  { title: 'Hornero', value: "BAKER" },
   { title: 'Repartidor', value: "DELIVERY" },
   { title: 'Cajero', value: "CASHIER" },
 ]
@@ -53,8 +53,8 @@ export const headersProducts = [
 ]
 
 export const headersOrderProducts = [
-  { title: 'Producto', key: 'product.name' },
-  { title: 'Precio U.', key: 'product.price', value: (item: any) => `$ ${item.product.price}` },
+  { title: 'Producto', key: 'product.name', align: 'start' },
+  { title: 'Precio U.', key: 'product.price', value: (item: any) => `$ ${item.product.price}`, align: 'end' },
   { title: 'Cantidad', key: 'quantity' },
   { title: 'Subtotal', key: 'subtotal', value: (item: any) => `$ ${item.product.price * item.quantity}`, align: 'end' },
   { title: 'Opciones', key: 'actions', align: 'end', sortable: false },
@@ -62,8 +62,8 @@ export const headersOrderProducts = [
 
 export const headersClients = [
   { title: 'RUT', key: 'rut', align: 'start' },
-  { title: 'Cliente', key: 'billName', align: 'center' },
-  { title: 'Nombre', key: 'fullName', value: (item: any) => `${item.person.names} ${item.person.lastName}`, align: 'center' },
+  { title: 'Cliente', key: 'billName', align: 'start' },
+  { title: 'Nombre', key: 'fullName', value: (item: any) => `${item.person.names} ${item.person.lastName}`, align: 'start' },
   { title: 'Direccion de entrega', key: 'shippingAddress', align: 'center' },
   { title: 'Celular', key: 'person.contact', align: 'center' },
   { title: 'Opciones', key: 'actions', align: 'end', sortable: false },

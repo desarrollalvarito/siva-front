@@ -33,7 +33,7 @@ const positiveNumber = (v: number) => v > 0 || 'Debe ser mayor a 0'
 // Sincronizar props al formulario
 watch(() => props.product, newVal => {
   if (newVal)
-    form.value = { ...newVal }
+    form.value = JSON.parse(JSON.stringify(newVal))
   else resetForm()
 }, { immediate: true })
 
