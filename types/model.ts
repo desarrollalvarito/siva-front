@@ -62,3 +62,21 @@ export interface Delivery {
   notes?: string
   userAt?: number
 }
+
+export interface Production {
+  id?: number
+  date: Date | string | null
+  assignedTo: Employee
+  status: string
+  userAt: number
+  productionProduct: ProductionProduct[]
+}
+
+export interface ProductionProduct {
+  id?: number
+  production: Production
+  product: Product
+  quantity: number
+  userAt: number
+}
+

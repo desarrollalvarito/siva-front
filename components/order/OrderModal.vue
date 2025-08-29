@@ -53,6 +53,16 @@ const formEmpty = JSON.parse(JSON.stringify(form.value))
 // Reglas de validación
 const required = (v: string) => !!v || 'Campo requerido'
 const positiveNumber = (v: number) => v > 0 || 'Debe ser mayor a 0'
+const verifyMinDate = (v: string) => {
+  const convert =
+    v.split('/').reverse().reduce((final, value) => {
+      return final === '' ? final + value : final + '-' + value
+    })
+  console.log(convert, minDate);
+  console.log(adapter.date(convert), adapter.date(minDate));
+  console.log(adapter.isBefore(adapter.date(convert), adapter.date(minDate)));
+  return adapter.isBefore(adapter.date(convert), adapter.date(minDate)) ? 'La fecha no puede ser anterior a hoy' : true
+}
 const notAdded = (v: Product) => {
   if (v && form.value.orderProduct.some(op => op.product.id === v.id)) {
     return 'Producto añadido'
@@ -75,7 +85,6 @@ watch(() => props.order, newVal => {
   if (newVal) {
     form.value = JSON.parse(JSON.stringify(newVal)) // Clonar para evitar mutaciones directas
     if (isNullOrUndefined(newVal.delivery)) {
-      console.log("Nulo: ", form.value.delivery, formEmpty.delivery);
       form.value.delivery = JSON.parse(JSON.stringify(formEmpty.delivery))
     }
     searchClient.value = newVal.client.billName || ''
@@ -122,7 +131,6 @@ const handleDeliverySwitch = () => {
   else {
     form.value.delivery.status = "CANCELLED"
   }
-  console.log("hola: ", isDelivery.value);
 }
 
 const employeeFiltered = computed(() => {
@@ -224,7 +232,7 @@ onMounted(async () => {
             </VCol>
             <VCol cols="12" md="6">
               <VDateInput v-model="form.date" label="Fecha de pedido" placeholder="01/01/1991" prepend-icon=""
-                :rules="[required]" :disabled="!fieldsEnabled" :min="minDate" :max="maxDate" />
+                :rules="[required, verifyMinDate]" :disabled="!fieldsEnabled" :min="minDate" :max="maxDate" />
             </VCol>
           </VRow>
           <VRow justify="end">

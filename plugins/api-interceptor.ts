@@ -1,5 +1,5 @@
 export default defineNuxtPlugin(() => {
-    const { status, token } = useAuth()
+    const { status, token, refreshToken, refresh } = useAuth()
     const config = useRuntimeConfig()
 
     // Guardar referencia original de $fetch
@@ -9,7 +9,15 @@ export default defineNuxtPlugin(() => {
     globalThis.$fetch = async (request, options) => {
         const requestUrl = typeof request === 'string' ? request : request.url
         const isAuthEndpoint = requestUrl?.includes('/auth/')
+        const isLoginEndpoint = requestUrl?.includes('/auth/login')
         const isApiRequest = requestUrl?.includes(config.public.apiBase)
+
+        // Si no hay token
+        if (isApiRequest && !isAuthEndpoint) {
+            if (status.value === undefined) {
+                console.log("consultando", request, token, status.value);
+            }
+        }
 
         // Solo inyectar token en endpoints API que no son de auth
         if (isApiRequest && !isAuthEndpoint && status.value === 'authenticated') {
@@ -21,6 +29,7 @@ export default defineNuxtPlugin(() => {
                         'Authorization': token.value ?? '',
                     }
                 }
+                else { console.log(refreshToken); }
             } catch (error) {
                 console.warn('No se pudo obtener token para API:', error)
             }
