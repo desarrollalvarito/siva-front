@@ -48,6 +48,13 @@ export const useOrder = () => {
     }
   }
 
+  const totalOrders = async (date: string) => {
+    return await $fetch<Order>(`${baseURL}/total`, {
+      method: 'POST',
+      body: { date },
+    })
+  }
+
   return {
     order,
     orders,
@@ -57,6 +64,7 @@ export const useOrder = () => {
     fetchOrders,
     createOrder,
     updateOrder,
-    deleteOrder
+    deleteOrder,
+    totalOrders
   }
 }

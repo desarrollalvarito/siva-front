@@ -21,7 +21,6 @@ export interface Employee {
   jobRole: string
   workShift: string
   person: Person
-
 }
 export interface Client {
   id?: number
@@ -66,9 +65,9 @@ export interface Delivery {
 export interface Production {
   id?: number
   date: Date | string | null
-  assignedTo: Employee
+  cook?: Employee
   status: string
-  userAt: number
+  userAt?: number
   productionProduct: ProductionProduct[]
 }
 
@@ -77,6 +76,6 @@ export interface ProductionProduct {
   production: Production
   product: Product
   quantity: number
-  userAt: number
+  userAt?: number
 }
 

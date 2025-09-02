@@ -30,10 +30,16 @@ export const stateList = [
   { title: 'Inactivo', value: 'INACTIVE' },
 ]
 
-export const orderState = [
+export const statusList = [
   { title: 'Pendiente', value: 'PENDING' },
   { title: 'Entregado', value: 'COMPLETED' },
   { title: 'Cancelado', value: 'CANCELLED' },
+  { title: 'En producción', value: 'IN_PRODUCTION' },
+  { title: 'Listo para entrega', value: 'READY' },
+  { title: 'En preparación', value: 'IN_PROGRESS' },
+  { title: 'Programado', value: 'SCHEDULED' },
+  { title: 'En camino', value: 'IN_TRANSIT' },
+  { title: 'Entregado', value: 'DELIVERED' },
 ]
 
 export const headersEmployees = [

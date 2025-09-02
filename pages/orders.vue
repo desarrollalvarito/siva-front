@@ -40,7 +40,7 @@ const getStateColor = (state: string) => {
 
 // Función para formatear el estado para mostrar
 const formatState = (state: string) => {
-  return orderState.find(item => item.value === state)?.title || state
+  return statusList.find(item => item.value === state)?.title || state
 }
 
 // Métodos CRUD
