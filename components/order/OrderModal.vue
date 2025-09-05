@@ -118,18 +118,20 @@ const handleClientSelect = (clientId: number) => {
 
 const handleDriverSelect = (driverId: number) => {
   const selected = employees.value.find(emp => emp.id === driverId)
-  if (selected) {
+  if (selected && form.value.delivery) {
     form.value.delivery.driver = { ...selected }
     searchDriver.value = selected.person.names + " " + selected.person.lastName
   }
 }
 
 const handleDeliverySwitch = () => {
-  if (isDelivery.value) {
+  if (isDelivery.value && form.value.delivery) {
     form.value.delivery.status = "PENDING"
   }
   else {
-    form.value.delivery.status = "CANCELLED"
+    if (form.value.delivery) {
+      form.value.delivery.status = "CANCELLED"
+    }
   }
 }
 

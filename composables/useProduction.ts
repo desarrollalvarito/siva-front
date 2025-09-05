@@ -7,6 +7,14 @@ export const useProduction = () => {
   const loading = ref(false)
   const error = ref<any | null>(null)
   const date = ref('')
+  const kpis = ref({
+    totalOrdenes: 0,
+    totalProductos: 0,
+    produccionProgramada: 0,
+    produccionEnProceso: 0,
+    productosDisponibles: 0
+  })
+  const ordersProductions = ref<Array<{ id: number; name: string; productions: number; orders: number; }>>([])
 
   const createProduction = async (payload: Production) => {
     return await $fetch<Production>(`${baseURL}/add`, {
@@ -48,15 +56,46 @@ export const useProduction = () => {
     }
   }
 
+  const fetchMetrics = async () => {
+    try {
+      const metrics = await $fetch<typeof kpis.value>(`${baseURL}/productionmetrics`, {
+        method: 'POST',
+        body: { date: date.value }
+      })
+      kpis.value = metrics
+      return metrics
+    } catch (err: any) {
+      error.value = err.data?.statusMessage || err.message
+      return null
+    }
+  }
+
+  const fetchOrdersProductions = async () => {
+    try {
+      ordersProductions.value = await $fetch<typeof ordersProductions.value>(`${baseURL}/ordersproductions`, {
+        method: 'POST',
+        body: { date: date.value }
+      })
+      return ordersProductions
+    } catch (err: any) {
+      error.value = err.data?.statusMessage || err.message
+      return null
+    }
+  }
+
   return {
     production,
     productions,
+    ordersProductions,
     loading,
     error,
     date,
+    kpis,
     fetchProductions,
     createProduction,
     updateProduction,
-    deleteProduction
+    deleteProduction,
+    fetchMetrics,
+    fetchOrdersProductions
   }
 }

@@ -82,3 +82,10 @@ export const headersOrders = [
   { title: 'Estado', key: 'state', align: 'center' },
   { title: 'Acciones', key: 'actions', align: 'end', sortable: false }
 ]
+
+export const headersProductionProducts = [
+  { title: 'Producto', key: 'name', align: 'start' },
+  { title: 'Requerido', key: 'orders', align: 'end' },
+  { title: 'Asignar', key: 'productions', align: 'end' },
+  { title: 'Restantes', key: 'total', align: 'end' },
+]

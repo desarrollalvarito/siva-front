@@ -79,3 +79,10 @@ export interface ProductionProduct {
   userAt?: number
 }
 
+export interface Kpis {
+  totalOrdenes: number,
+  totalProductos: number,
+  produccionProgramada: number,
+  produccionEnProceso: number,
+  productosDisponibles: number
+}

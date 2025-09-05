@@ -2,7 +2,7 @@
 import type { Production } from '@/types/model';
 import { VDateInput } from 'vuetify/labs/components';
 
-const { productions, loading, error, date, fetchProductions, createProduction, updateProduction, deleteProduction } = useProduction()
+const { productions, loading, error, date, kpis, ordersProductions, fetchOrdersProductions, fetchMetrics, fetchProductions, createProduction, updateProduction, deleteProduction } = useProduction()
 const dialogOpen = ref(false)
 const isEditMode = ref(false)
 const selectedProduction = ref<Production | null>(null)
@@ -19,7 +19,7 @@ const ProductionEmpty = ref<Production>({
     jobRole: '',
     person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null },
   },
-  date: null,
+  date: new Date().toISOString().split('T')[0],
   status: '',
   productionProduct: []
 })
@@ -62,6 +62,8 @@ const openDeleteDialog = (recoveryOption: boolean, Production: Production) => {
 const updateDate = () => {
   date.value = searchDate.value.toISOString().split('T')[0]
   fetchProductions()
+  fetchMetrics()
+  fetchOrdersProductions()
 }
 
 onMounted(() => {
@@ -82,7 +84,7 @@ const handleSubmit = async (Production: Production) => {
     }
     textSuccess.value = `Orden ${isEditMode.value ? 'actualizada' : 'creada'} satisfactoriamente`
     showSuccess.value = true
-    fetchProductions()
+    updateDate()
   }
   catch (error) {
     console.error('Error:', error)
@@ -110,118 +112,61 @@ const handleDelete = async () => {
 </script>
 
 <template>
-  <ClientOnly>
-    <VContainer class="mb-2">
-      <VRow>
-        <VCol cols="12" md="4">x</VCol>
-        <VCol cols="12" md="4">x</VCol>
-        <VCol cols="12" md="4">x</VCol>
-      </VRow>
-    </VContainer>
-
-    <VSheet border rounded>
+  <VSheet border rounded>
+    <ClientOnly>
+      <OrderAvailable :kpis="kpis" />
       <VAlert v-if="error" type="error" class="mt-4" icon="mdi-database-off">
         Error de obtencion de datos: {{ error }}
       </VAlert>
-      <VDataIterator :items="productions" :page=page>
-        <template #header>
-          <VToolbar flat>
-            <VToolbarTitle>
-              <VIcon color="medium-emphasis" icon="mdi-hamburger" size="x-small" start />
-              Produccion
+      <!-- SECCIÓN DE PRODUCCIONES -->
+      <VContainer fluid>
+        <VCard elevation="2" class="production-section">
+          <VToolbar color="surface" flat>
+            <VToolbarTitle class="d-flex align-center">
+              <VIcon color="primary" icon="mdi-hamburger" class="mr-2" />
+              <span class="text-h6">Producción del Día</span>
             </VToolbarTitle>
-            <VDateInput v-model="searchDate" label="Fecha de produccion" placeholder="01/01/1991"
-              prepend-icon="mdi-calendar" style="max-inline-size: 250px;" class="mr-6" clearable
+
+            <VSpacer />
+
+            <VDateInput v-model="searchDate" label="Fecha de producción" placeholder="Seleccionar fecha"
+              prepend-icon="mdi-calendar" style="max-inline-size: 250px;" class="mr-3" density="comfortable"
               @update:model-value="updateDate" />
-            <VBtn class="me-2" prepend-icon="mdi-hamburger-plus" rounded="lg" text="Añadir Produccion" border
-              @click="openDialog(false, ProductionEmpty)" />
+
+            <VBtn color="primary" prepend-icon="mdi-plus" rounded="lg" @click="openDialog(false)" elevation="1">
+              Nueva Producción
+            </VBtn>
           </VToolbar>
-        </template>
-        <template v-slot:default="{ items }">
-          <VContainer class="pa-2" fluid>
-            <VRow no-gutters justify="center">
-              <VCol v-for="item in items" :key="item.raw.id" cols="12" md="4">
-                <VCard>
-                  <VCardItem>
-                    <VCardTitle class="text-truncate">Hornero: {{ item.raw.cook?.person.names + ' ' +
-                      item.raw.cook?.person.lastName }}
-                    </VCardTitle>
-                    <VCardSubtitle>
-                      <VChip class="ma-2" prepend-icon="mdi-card-account-details" color="info" size="x-small">
-                        RUN: {{ item.raw.cook?.person.run }}
-                      </VChip>
-                      <VChip class="ma-2" prepend-icon="mdi-clock" color="primary" size="x-small">
-                        Turno: {{ item.raw.cook?.workShift }}
-                      </VChip>
-                      <VChip class="ma-1" prepend-icon="mdi-list-status" :color="getStatusColor(item.raw.status)"
-                        size="x-small">
-                        {{ formatStatus(item.raw.status) }}
-                      </VChip>
-                    </VCardSubtitle>
-                  </VCardItem>
-                  <VCardText>
-                    <VListSubheader>Asignaciones:</VListSubheader>
-                    <VList>
-                      <VListItem v-for="pp in item.raw.productionProduct" v-if="item.raw.productionProduct.length > 0">
-                        {{ pp.product.name }}
-                        <template v-slot:append>
-                          {{ pp.quantity }}
-                        </template>
-                      </VListItem>
-                      <VListItem v-else>
-                        Sin Asignaciones
-                      </VListItem>
-                    </VList>
-                  </VCardText>
 
-                  <VCardActions>
-                    <VSpacer></VSpacer>
-                    <div v-if="item.raw.status === 'PENDING'">
-                      <VTooltip location="bottom">
-                        <template #activator="{ props: tooltipProps }">
-                          <VBtn v-bind="tooltipProps" icon="mdi-pencil" size="small" variant="text"
-                            @click="openDialog(true, item.raw)" />
-                        </template>
-                        <span>Editar</span>
-                      </VTooltip>
-                      <VTooltip location="bottom">
-                        <template #activator="{ props: tooltipProps }">
-                          <VBtn v-bind="tooltipProps" icon="mdi-close-circle" size="small" variant="text"
-                            @click="openDeleteDialog(false, item.raw)" />
-                        </template>
-                        <span>Cancelar</span>
-                      </VTooltip>
-                    </div>
-                    <div v-if="item.raw.status === 'CANCELLED'">
-                      <VTooltip location="bottom">
-                        <template #activator="{ props: tooltipProps }">
-                          <VBtn v-bind="tooltipProps" icon="mdi-arrow-u-left-top-bold" size="small" variant="text"
-                            @click="openDeleteDialog(true, item.raw)" />
-                        </template>
-                        <span>Recuperar</span>
-                      </VTooltip>
-                    </div>
-                  </VCardActions>
-                </VCard>
-              </VCol>
-            </VRow>
-          </VContainer>
-        </template>
+          <VDataIterator :items="productions" :page="page">
+            <template v-slot:default="{ items }">
+              <VContainer class="pa-3" fluid>
+                <VRow>
+                  <VCol v-for="item in items" :key="item.raw.id" cols="12" sm="6" md="6" lg="4" class="pa-2">
+                    <ProductionCard :production="item.raw" @edit="openDialog(true, item.raw)"
+                      @delete="openDeleteDialog(false, item.raw)" @recover="openDeleteDialog(true, item.raw)" />
+                  </VCol>
+                </VRow>
+              </VContainer>
+            </template>
 
-        <template #no-data>
-          <VContainer class="pa-2" fluid>
-            No se han encontrado registros.
-          </VContainer>
-        </template>
-
-      </VDataIterator>
-    </VSheet>
-    <DeleteModal ref="deleteDialog" tag="Produccion del Hornero"
-      :name="selectedProduction?.assignedTo?.person.names ?? ''" :recovery="recovery" @confirm="handleDelete" />
-    <ProductionModal v-model="dialogOpen" :is-edit="isEditMode" :Production="selectedProduction"
-      @submit="handleSubmit" />
-    <VSnackbar v-model="showSuccess">
-      {{ textSuccess }}
-    </VSnackbar>
-  </ClientOnly>
+            <template #no-data>
+              <VContainer class="text-center py-8">
+                <VIcon size="64" color="grey-lighten-2">mdi-inbox</VIcon>
+                <div class="text-h6 text-grey-lighten-1 mt-2">No hay producciones</div>
+                <div class="text-body-2 text-grey">Crea una nueva producción para comenzar</div>
+              </VContainer>
+            </template>
+          </VDataIterator>
+        </VCard>
+      </VContainer>
+      <DeleteModal ref="deleteDialog" tag="Produccion del Hornero" :name="selectedProduction?.cook?.person.names ?? ''"
+        :recovery="recovery" @confirm="handleDelete" />
+      <ProductionModal v-model="dialogOpen" :is-edit="isEditMode" :Production="selectedProduction"
+        :orders-productions="ordersProductions" @submit="handleSubmit" />
+      <VSnackbar v-model="showSuccess">
+        {{ textSuccess }}
+      </VSnackbar>
+    </ClientOnly>
+  </VSheet>
 </template>
