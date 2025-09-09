@@ -24,27 +24,12 @@ const ProductionEmpty = ref<Production>({
   productionProduct: []
 })
 
-// Función para determinar el color según el estado
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'PENDING': return 'warning'
-    case 'COMPLETED': return 'success'
-    case 'CANCELLED': return 'error'
-    default: return 'secondary'
-  }
-}
-
-// Función para formatear el estado para mostrar
-const formatStatus = (status: string) => {
-  return statusList.find(item => item.value === status)?.title || status
-}
-
 // Métodos CRUD
-const openDialog = (edit: boolean, Production: Production | null = null) => {
+const openDialog = (edit: boolean, production: Production | null = null) => {
   isEditMode.value = edit
-  if (Production) {
+  if (production) {
     // Si es edición, asignar el Productiono seleccionado
-    selectedProduction.value = { ...Production } // Clonar para evitar mutaciones directas
+    selectedProduction.value = { ...production } // Clonar para evitar mutaciones directas
   }
   else {
     // Si es creación, reiniciar el formulario
@@ -53,9 +38,9 @@ const openDialog = (edit: boolean, Production: Production | null = null) => {
   dialogOpen.value = true
 }
 
-const openDeleteDialog = (recoveryOption: boolean, Production: Production) => {
+const openDeleteDialog = (recoveryOption: boolean, production: Production) => {
   recovery.value = recoveryOption
-  selectedProduction.value = Production
+  selectedProduction.value = production
   deleteDialog.value?.open()
 }
 
@@ -162,7 +147,7 @@ const handleDelete = async () => {
       </VContainer>
       <DeleteModal ref="deleteDialog" tag="Produccion del Hornero" :name="selectedProduction?.cook?.person.names ?? ''"
         :recovery="recovery" @confirm="handleDelete" />
-      <ProductionModal v-model="dialogOpen" :is-edit="isEditMode" :Production="selectedProduction"
+      <ProductionModal v-model="dialogOpen" :is-edit="isEditMode" :production="selectedProduction"
         :orders-productions="ordersProductions" @submit="handleSubmit" />
       <VSnackbar v-model="showSuccess">
         {{ textSuccess }}

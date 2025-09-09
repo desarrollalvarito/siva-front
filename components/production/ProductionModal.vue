@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Product, Production, ProductionProduct } from '@/types/model';
+import type { Production } from '@/types/model';
 import { useDate } from 'vuetify';
 import { VDateInput } from 'vuetify/labs/components';
 
@@ -20,9 +20,9 @@ const emit = defineEmits<{
 const { employees, fetchEmployees } = useEmployee()
 const searchCook = ref('')
 const isEditing = computed(() => props.isEdit && props.production?.id)
-const selectedProduct = ref<Product | null>(null)
-const productQuantity = ref(1)
-// Fechas mínima y máxima
+
+// Fechas
+const today = new Date()
 const minDate = new Date().toISOString().split('T')[0]
 const maxDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
@@ -34,41 +34,88 @@ const form = ref<Production>({
     jobRole: '',
     person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null },
   },
-  date: null,
-  status: '',
+  date: today,
+  status: 'PENDING',
   productionProduct: []
 })
 
-// Datos de productos con órdenes y producción
-const orderProductions = computed(() => {
-  return props.ordersProductions.map(item => ({
-    id: item.id,
-    name: item.name,
-    orders: item.orders,
-    productions: item.productions,
-    quantity: calculateQuantity(item)
-  }))
-})
+// Datos de productos procesados
+const processedProducts = ref<Array<{
+  id: number
+  name: string
+  orders: number
+  productions: number
+  pending: number
+  quantity: number
+  available: number
+}>>([])
 
-// Calcular pendientes
-const calculateQuantity = (item: any) => {
-  const productionSelected = form.value.productionProduct.filter((pp: ProductionProduct) => pp.id === item.id)
-  // Accede de forma segura al primer elemento si existe
-  if (productionSelected.length > 0) {
-    // Aquí puedes usar productionSelected[0] para 
-    // 
-    // obtener la cantidad producida, por ejemplo:
-    return productionSelected[0].quantity
-  }
-  // Si no hay producción registrada, retorna la cantidad total de órdenes pendientes
-  return 0
+// Calcular productos procesados
+const calculateProcessedProducts = () => {
+  processedProducts.value = props.ordersProductions.map(item => {
+    // Buscar si ya existe una producción para este producto
+    const existingProduction = form.value.productionProduct.find(pp => pp.product.id === item.id)
+    const quantity = existingProduction ? existingProduction.quantity : 0
+    const pending = Math.max(0, item.orders - item.productions)
+
+    return {
+      id: item.id,
+      name: item.name,
+      orders: item.orders,
+      productions: item.productions,
+      pending: pending,
+      quantity: quantity,
+      available: (item.productions + quantity) - item.orders
+    }
+  })
 }
+
+// Actualizar cantidad de producción
+const updateProductionQuantity = (productId: number, quantity: number) => {
+  // Validar que la cantidad no sea negativa
+  const validQuantity = Math.max(0, quantity)
+
+  // Buscar el índice del producto en productionProduct
+  const index = form.value.productionProduct.findIndex(pp => pp.product.id === productId)
+
+  if (index !== -1) {
+    // Actualizar cantidad existente
+    if (validQuantity >= 0) {
+      form.value.productionProduct[index].quantity = validQuantity
+    } else {
+      // Eliminar si la cantidad es 0
+      form.value.productionProduct.splice(index, 1)
+    }
+  } else if (validQuantity > 0) {
+    // Agregar nuevo producto a la producción
+    const product = props.ordersProductions.find(op => op.id === productId)
+    if (product) {
+      form.value.productionProduct.push({
+        product: {
+          id: product.id,
+          name: product.name
+        },
+        quantity: validQuantity
+      })
+    }
+  }
+
+  // Recalcular los productos procesados
+  calculateProcessedProducts()
+}
+
+// Calcular total de productos asignados
+const totalAssigned = computed(() => {
+  return processedProducts.value.reduce((total, product) => total + product.quantity, 0)
+})
 
 const formEmpty = JSON.parse(JSON.stringify(form.value))
 
 const resetForm = () => {
   form.value = JSON.parse(JSON.stringify(formEmpty))
+  form.value.date = today
   searchCook.value = ''
+  calculateProcessedProducts()
 }
 
 // Reglas de validación
@@ -79,26 +126,29 @@ const verifyMinDate = (v: string) => {
     v.split('/').reverse().reduce((final, value) => {
       return final === '' ? final + value : final + '-' + value
     })
-  console.log(convert, minDate);
-  console.log(adapter.date(convert), adapter.date(minDate));
-  console.log(adapter.isBefore(adapter.date(convert), adapter.date(minDate)));
   return adapter.isBefore(adapter.date(convert), adapter.date(minDate)) ? 'La fecha no puede ser anterior a hoy' : true
 }
 
 // Sincronizar props al formulario
 watch(() => props.production, newVal => {
   if (newVal) {
-    form.value = JSON.parse(JSON.stringify(newVal)) // Clonar para evitar mutaciones directas
+    form.value = JSON.parse(JSON.stringify(newVal))
     if (isNullOrUndefined(newVal.cook)) {
       form.value.cook = JSON.parse(JSON.stringify(formEmpty.cook))
     }
     searchCook.value = newVal?.cook?.person.names || ''
-    selectedProduct.value = null // Reiniciar selección de producto
-    productQuantity.value = 1 // Reiniciar cantidad de producto
-    form.value.date = newVal.date ? adapter.date(new Date(newVal.date).toISOString().split('T')[0]) : adapter.date(new Date())
+    form.value.date = newVal.date ? adapter.date(new Date(newVal.date).toISOString().split('T')[0]) : new Date()
+    // Recalcular productos procesados después de cargar la producción
+    calculateProcessedProducts()
+  } else {
+    resetForm()
   }
-  else resetForm()
 }, { immediate: true })
+
+// Actualizar cuando cambian las órdenes de producción
+watch(() => props.ordersProductions, () => {
+  calculateProcessedProducts()
+}, { deep: true })
 
 // Método para habilitar campos
 const fieldsEnabled = computed(() => {
@@ -121,46 +171,47 @@ const handleCookSelect = (cookId: number) => {
 const employeeFiltered = computed(() => {
   return employees.value
     .filter(emp => {
-      // Validaciones seguras
       if (!emp || !emp.jobRole) return false
       return emp.jobRole.toUpperCase().includes('BAKER')
     })
     .map(emp => ({
       ...emp,
       displayName: `${emp.person?.names || ''} ${emp.person?.lastName || ''}`.trim() || 'Nombre no disponible',
-      // Información adicional útil
       subtitle: `RUN: ${emp.person?.run || 'N/A'} - TURNO: ${emp.workShift || 'N/A'}`
     }))
 })
 
-const totalItems = computed(() => {
-  return orderProductions.value.reduce((total, product) => {
-    // Convertir a número y asegurar valor válido
-    console.log(product.quantity);
-    const quantity = Number(product.quantity) || 0
-    return total + quantity
-  }, 0)
-})
+const formatAvailable = (available: number) => {
+  return available >= 0 ? 'Sobran: ' + Math.abs(available) : 'Faltan: ' + Math.abs(available)
+}
 
 const cancel = () => {
   emit('update:modelValue', false)
   resetForm()
 }
 
+// Validar cantidad máxima
+const validateMaxQuantity = (product: any, quantity: number) => {
+  // Puede producir hasta 500 de lo pendiente como máximo
+  const maxQuantity = product.pending + 500
+  return Math.min(quantity, maxQuantity)
+}
+
 onMounted(async () => {
   fetchEmployees()
+  calculateProcessedProducts()
 })
 </script>
 
 <template>
-  <VDialog max-width="750" :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)">
+  <VDialog max-width="900" :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)">
     <VForm @submit.prevent="handleSubmit">
       <VCard :title="`${isEdit ? 'Modificar' : 'Nueva'} producion`">
         <VCardText>
           <VRow>
             <VCol cols="12" md="6">
               <VAutocomplete v-model="form.cook.id" :items="employeeFiltered" label="Seleccionar Hornero"
-                item-title="person.names" item-value="id" placeholder="Buscar Hornero por RUN" clearable
+                item-title="displayName" item-value="id" placeholder="Buscar Hornero por RUN" clearable
                 :hide-no-data="false" :search="searchCook" @update:model-value="handleCookSelect" :rules="[required]"
                 :disabled="fieldsEnabled">
                 <template #item="{ props, item }">
@@ -176,32 +227,67 @@ onMounted(async () => {
           </VRow>
           <VDivider class="my-4" />
           <VCard>
-            <VDataTable :headers="headersProductionProducts" :items="orderProductions" hide-default-footer>
-              <template v-slot:top>
-                <VToolbar flat>
-                  <VToolbarTitle>
-                    <VIcon color="medium-emphasis" icon="mdi-food" size="x-small" start />
-                    Productos Ordenados
-                  </VToolbarTitle>
-                </VToolbar>
+            <VToolbar flat color="surface">
+              <VToolbarTitle>
+                <VIcon color="primary" icon="mdi-food" class="mr-2" />
+                Asignación de Producción
+              </VToolbarTitle>
+              <VSpacer />
+              <div class="d-flex align-center">
+                <span class="text-body-2 mr-2">Total asignado:</span>
+                <VChip color="primary" size="small">
+                  {{ totalAssigned }} unidades
+                </VChip>
+              </div>
+            </VToolbar>
+            <VDataTable :headers="headersProductionProducts" :items="processedProducts" :items-per-page="-1"
+              hide-default-footer class="elevation-1">
+              <template v-slot:item.pending="{ item }">
+                <VChip :color="item.pending > 0 ? 'orange' : 'green'" variant="flat">
+                  {{ item.pending }}
+                </VChip>
               </template>
-              <template v-slot:item="{ item }">
-                <tr>
-                  <td>{{ item.name }}</td>
-                  <td align="right">$ {{ item.orders - item.productions }}</td>
-                  <td>
-                    <VTextField v-model.number="item.quantity" type="number" min="1" density="compact" hide-details
-                      @update:model-value=""></VTextField>
-                  </td>
-                  <td align="right">$ {{ item.orders - (item.quantity + item.productions) }}</td>
-                </tr>
+
+              <template v-slot:item.productions="{ item }">
+                <span class="font-weight-bold text-blue-darken-2">{{ item.productions }}</span>
               </template>
-              <template v-slot:bottom>
-                <div class="text-h6 pa-4">Total: {{ totalItems }} producto{{ totalItems !== 1 ? 's' : '' }} asignados
-                </div>
+
+              <template v-slot:item.quantity="{ item }">
+                <VTextField v-model.number="item.quantity" type="number" density="compact" variant="outlined"
+                  hide-details class="quantity-input" style="max-inline-size: 100px;" :min="0" :max="item.pending + 500"
+                  @update:model-value="updateProductionQuantity(item.id, $event)"
+                  @blur="updateProductionQuantity(item.id, item.quantity)" />
+              </template>
+
+              <template v-slot:item.available="{ item }">
+                <VChip :color="item.available >= 0 ? 'green' : 'red'" variant="flat">
+                  {{ formatAvailable(item.available) }}
+                  <VIcon v-if="item.available < 0" icon="mdi-alert" class="ml-1" size="small" />
+                </VChip>
               </template>
             </VDataTable>
+            <VCardText class="bg-grey-lighten-4">
+              <VRow>
+                <VCol cols="12" md="6">
+                  <div class="d-flex align-center">
+                    <VIcon icon="mdi-information" color="info" class="mr-2" />
+                    <span class="text-caption">
+                      <strong>Órdenes Pendientes:</strong> Cantidad requerida por clientes
+                    </span>
+                  </div>
+                </VCol>
+                <VCol cols="12" md="6">
+                  <div class="d-flex align-center">
+                    <VIcon icon="mdi-information" color="info" class="mr-2" />
+                    <span class="text-caption">
+                      <strong>Stock Disponible:</strong> Stock resultante (Producción + Existente - Órdenes)
+                    </span>
+                  </div>
+                </VCol>
+              </VRow>
+            </VCardText>
           </VCard>
+
         </VCardText>
 
         <VDivider />

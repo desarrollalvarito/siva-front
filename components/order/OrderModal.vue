@@ -58,9 +58,6 @@ const verifyMinDate = (v: string) => {
     v.split('/').reverse().reduce((final, value) => {
       return final === '' ? final + value : final + '-' + value
     })
-  console.log(convert, minDate);
-  console.log(adapter.date(convert), adapter.date(minDate));
-  console.log(adapter.isBefore(adapter.date(convert), adapter.date(minDate)));
   return adapter.isBefore(adapter.date(convert), adapter.date(minDate)) ? 'La fecha no puede ser anterior a hoy' : true
 }
 const notAdded = (v: Product) => {
@@ -279,8 +276,8 @@ onMounted(async () => {
                   <td>{{ item.product.name }}</td>
                   <td align="right">$ {{ item.product.price }}</td>
                   <td>
-                    <VTextField v-model.number="item.quantity" type="number" min="1" density="compact" hide-details
-                      @update:model-value="updateTotal"></VTextField>
+                    <VTextField v-model.number="item.quantity" type="number" style="max-inline-size: 100px;" min="1"
+                      density="compact" hide-details @update:model-value="updateTotal"></VTextField>
                   </td>
                   <td align="right">$ {{ item.product.price * item.quantity }}</td>
                   <td align="center">

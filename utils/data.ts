@@ -84,8 +84,9 @@ export const headersOrders = [
 ]
 
 export const headersProductionProducts = [
-  { title: 'Producto', key: 'name', align: 'start' },
-  { title: 'Requerido', key: 'orders', align: 'end' },
-  { title: 'Asignar', key: 'productions', align: 'end' },
-  { title: 'Restantes', key: 'total', align: 'end' },
+  { title: 'Producto', key: 'name', sortable: true },
+  { title: 'Órdenes Pendientes', key: 'pending', align: 'end', sortable: true },
+  { title: 'Producción Existente', key: 'productions', align: 'end', sortable: true },
+  { title: 'Cantidad a Producir', key: 'quantity', align: 'center', sortable: false },
+  { title: 'Stock Disponible', key: 'available', align: 'end', sortable: true }
 ]

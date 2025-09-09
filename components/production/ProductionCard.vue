@@ -126,7 +126,7 @@ const formatStatus = (status: string) => {
   display: flex;
   flex-direction: column;
   border: 2px solid transparent;
-  block-size: 20rem;
+  block-size: 23rem;
   transition: all 0.3s ease;
 }
 

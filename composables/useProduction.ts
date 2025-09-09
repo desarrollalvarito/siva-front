@@ -24,6 +24,7 @@ export const useProduction = () => {
   }
 
   const updateProduction = async (payload: Production) => {
+    console.log(payload);
     return await $fetch<Production>(`${baseURL}/modify`, {
       method: 'PUT',
       body: payload

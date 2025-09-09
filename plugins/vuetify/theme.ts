@@ -50,6 +50,12 @@ export const themes: Record<string, ThemeDefinition> = {
       'skin-bordered-background': '#fff',
       'skin-bordered-surface': '#fff',
       'expansion-panel-text-custom-bg': '#fafafa',
+      'red': '#F44336',
+      'indigo': '#3F51B5',
+      'blue': '#2196F3',
+      'green': '#4CAF50',
+      'orange': '#FF9800',
+      'deep-orange': '#FF5722'
     },
 
     variables: {
