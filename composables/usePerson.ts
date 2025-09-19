@@ -1,75 +1,70 @@
+import type { ApiResponse } from '@/types/api'
 import type { Person } from '@/types/model'
 
 export const usePerson = () => {
   // Estado reactivo
-  const baseURL = urlToApiBase('/person')
-  const person = ref<Person | null>(null)
-  const people = ref<Person[]>([]) // Corregido el typo 'peoople'
-  const loading = ref(false)
-  const error = ref<string | null>(null) // Mejor tipado
+  const baseURL = '/siva/v1/person'
+  const { $api } = useNuxtApp()
 
-  // Helper para manejar errores
-  const handleApiError = (err: unknown) => {
-    error.value = err instanceof Error ? err.message : 'Error desconocido'
-    throw error.value
+  // Obtener lista de personas
+  const fetchPeople = async (): Promise<Person[]> => {
+    try {
+      const response = await $api<ApiResponse<Person[]>>(`${baseURL}/list`)
+      if (response.success && response.data) {
+        return response.data
+      } else {
+        throw new Error(response.error || 'Error al obtener personas')
+      }
+    } catch (error: any) {
+      throw createError({
+        message: error.message,
+        statusCode: error.statusCode || 500
+      })
+    }
   }
 
   // Crear persona
-  const createPerson = async (payload: Person) => {
+  const createPerson = async (payload: Person): Promise<Person> => {
     try {
-      const data = await $fetch<Person>(`${baseURL}/add`, {
+      const response = await $api<ApiResponse<Person>>(`${baseURL}/add`, {
         method: 'POST',
         body: payload,
       })
-    } catch (err) {
-      return handleApiError(err)
+      if (response.success && response.data) return response.data
+      throw new Error(response.error || 'Error al crear persona')
+    } catch (err: any) {
+      throw createError({ message: err.message, statusCode: err.statusCode || 500 })
     }
   }
 
   // Actualizar persona
-  const updatePerson = async (payload: Person) => {
+  const updatePerson = async (payload: Person): Promise<Person> => {
     try {
-      const data = await $fetch<Person>(`${baseURL}/modify`, {
+      const response = await $api<ApiResponse<Person>>(`${baseURL}/modify`, {
         method: 'PUT',
         body: payload,
       })
-    } catch (err) {
-      return handleApiError(err)
+      if (response.success && response.data) return response.data
+      throw new Error(response.error || 'Error al actualizar persona')
+    } catch (err: any) {
+      throw createError({ message: err.message, statusCode: err.statusCode || 500 })
     }
   }
 
   // Eliminar persona
-  const deletePerson = async (id: number) => {
+  const deletePerson = async (id: number): Promise<void> => {
     try {
-      const data = await $fetch<Person>(`${baseURL}/remove`, {
+      const response = await $api<ApiResponse>(`${baseURL}/remove`, {
         method: 'DELETE',
         body: { id },
       })
-    } catch (err) {
-      return handleApiError(err)
-    }
-  }
-
-  // Obtener lista de personas
-  const fetchPeople = async () => { // Nombre corregido
-    loading.value = true
-    error.value = null
-
-    try {
-      const data = await $fetch<Person[]>(`${baseURL}/list`)
-      people.value = data
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Error al obtener personas'
-    } finally {
-      loading.value = false
+      if (!response.success) throw new Error(response.error || 'Error al eliminar persona')
+    } catch (err: any) {
+      throw createError({ message: err.message, statusCode: err.statusCode || 500 })
     }
   }
 
   return {
-    person,
-    people, // Nombre corregido
-    loading,
-    error,
     fetchPeople, // Nombre corregido
     createPerson,
     updatePerson,

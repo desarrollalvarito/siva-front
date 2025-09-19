@@ -1,54 +1,66 @@
+import type { ApiResponse } from '@/types/api'
 import type { Client } from '@/types/model'
 
 export const useClient = () => {
-  const baseURL = urlToApiBase('/client')
-  const client = ref<Client | null>(null)
-  const clients = ref<Client[]>([])
-  const loading = ref(false)
-  const error = ref<any | null>(null)
+  const baseURL = '/siva/v1/client'
+  const { $api } = useNuxtApp()
 
-  const createClient = async (payload: Client) => {
-    return await $fetch<Client>(`${baseURL}/add`, {
-      method: 'POST',
-      body: payload
-    })
-  }
-
-  const updateClient = async (payload: Client) => {
-    return await $fetch<Client>(`${baseURL}/modify`, {
-      method: 'PUT',
-      body: payload,
-
-    })
-  }
-
-  const deleteClient = async (id: number) => {
-    return await $fetch<Client>(`${baseURL}/remove`, {
-      method: 'DELETE',
-      body: { id },
-    })
-  }
-
-  const fetchClients = async () => {
-    loading.value = true
-    error.value = null
+  const fetchClients = async (): Promise<Client[]> => {
     try {
-      const data = await $fetch<Client[]>(`${baseURL}/list`)
-      clients.value = data
+      const response = await $api<ApiResponse<Client[]>>(`${baseURL}/list`)
+      if (response.success && response.data) {
+        return response.data
+      } else {
+        throw new Error(response.error || 'Error al obtener clientes')
+      }
+    } catch (error: any) {
+      throw createError({
+        message: error.message,
+        statusCode: error.statusCode || 500
+      })
     }
-    catch (error: any) {
-      error.value = error.message || 'Fallo al obtener los Empleados'
+  }
+
+  const createClient = async (payload: Client): Promise<Client> => {
+    try {
+      const response = await $api<ApiResponse<Client>>(`${baseURL}/add`, {
+        method: 'POST',
+        body: payload,
+      })
+      if (response.success && response.data) return response.data
+      throw new Error(response.error || 'Error al crear cliente')
+    } catch (err: any) {
+      throw createError({ message: err.message, statusCode: err.statusCode || 500 })
     }
-    finally {
-      loading.value = false
+  }
+
+  const updateClient = async (payload: Client): Promise<Client> => {
+    try {
+      const response = await $api<ApiResponse<Client>>(`${baseURL}/modify`, {
+        method: 'PUT',
+        body: payload,
+      })
+      console.log(response);
+      if (response.success && response.data) return response.data
+      throw new Error(response.error || 'Error al actualizar cliente')
+    } catch (err: any) {
+      throw createError({ message: err.message, statusCode: err.statusCode || 500 })
+    }
+  }
+
+  const deleteClient = async (id: number): Promise<void> => {
+    try {
+      const response = await $api<ApiResponse>(`${baseURL}/remove`, {
+        method: 'DELETE',
+        body: { id },
+      })
+      if (!response.success) throw new Error(response.error || 'Error al eliminar cliente')
+    } catch (err: any) {
+      throw createError({ message: err.message, statusCode: err.statusCode || 500 })
     }
   }
 
   return {
-    client,
-    clients,
-    loading,
-    error,
     fetchClients,
     createClient,
     updateClient,

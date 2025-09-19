@@ -1,12 +1,13 @@
 export interface Product {
-  id?: number
-  name: string
-  price: number
-  userAt?: number
+  id: number;
+  name: string;
+  price: number;
+  state?: 'ACTIVE' | 'INACTIVE';
+  userAt?: number;
 }
 
 export interface Person {
-  id?: number
+  id: number
   run: string
   names: string
   lastName: string
@@ -17,13 +18,13 @@ export interface Person {
 }
 
 export interface Employee {
-  id?: number
+  id: number
   jobRole: string
   workShift: string
   person: Person
 }
 export interface Client {
-  id?: number
+  id: number
   shippingAddress: string
   billName: string
   rut: string
@@ -31,7 +32,7 @@ export interface Client {
 }
 
 export interface Order {
-  id?: number
+  id: number
   date: Date | string | null
   client: Client
   quantity: number
@@ -42,7 +43,7 @@ export interface Order {
 }
 
 export interface OrderProduct {
-  id?: number
+  id: number
   orderId?: number
   quantity: number
   aditional: boolean
@@ -52,7 +53,7 @@ export interface OrderProduct {
 }
 
 export interface Delivery {
-  id?: number,
+  id: number,
   order?: Order
   status: string
   driver: Employee
@@ -63,7 +64,7 @@ export interface Delivery {
 }
 
 export interface Production {
-  id?: number
+  id: number
   date: Date | string | null
   cook?: Employee
   status: string
@@ -72,7 +73,7 @@ export interface Production {
 }
 
 export interface ProductionProduct {
-  id?: number
+  id: number
   production: Production
   product: Product
   quantity: number

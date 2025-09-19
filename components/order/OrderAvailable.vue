@@ -63,7 +63,7 @@ const props = defineProps<{
             </div>
 
             <div class="text-h2 font-weight-bold text-white mb-1">
-              {{ kpis.produccionProgramada }}
+              {{ kpis.produccionProgramada + kpis.produccionEnProceso }}
             </div>
             <div class="text-body-1 text-white mb-3">
               Programadas
@@ -74,11 +74,12 @@ const props = defineProps<{
             <!-- Progress Circular -->
             <div class="progress-circular-container">
               <VProgressCircular :model-value="kpis.totalProductos > 0 ?
-                (kpis.produccionProgramada / kpis.totalProductos) * 100 : 0" :size="60" :width="4" color="white"
-                class="mb-2">
+                ((kpis.produccionProgramada + kpis.produccionEnProceso) / kpis.totalProductos) * 100 : 0" :size="60"
+                :width="4" color="white" class="mb-2">
                 <span class="text-white text-caption font-weight-bold">
                   {{ kpis.totalProductos > 0 ?
-                    Math.round((kpis.produccionProgramada / kpis.totalProductos) * 100) : 0 }}%
+                    Math.round(((kpis.produccionProgramada + kpis.produccionEnProceso) / kpis.totalProductos) * 100) : 0
+                  }}%
                 </span>
               </VProgressCircular>
             </div>
@@ -111,8 +112,9 @@ const props = defineProps<{
             <div class="efficiency-stats">
               <div class="stat-item">
                 <div class="text-h6 text-white font-weight-bold">
-                  {{ kpis.produccionProgramada > 0 ?
-                    Math.round((kpis.produccionEnProceso / kpis.produccionProgramada) * 100) : 0 }}%
+                  {{ kpis.produccionEnProceso > 0 ?
+                    Math.round((kpis.produccionEnProceso / kpis.totalProductos) * 100)
+                    : 0 }}%
                 </div>
                 <div class="text-caption text-white opacity-80">
                   Avance
@@ -130,8 +132,8 @@ const props = defineProps<{
             </div>
 
             <!-- Mini progress bar -->
-            <VProgressLinear :model-value="kpis.produccionProgramada > 0 ?
-              (kpis.produccionEnProceso / kpis.produccionProgramada) * 100 : 0" color="white" height="6" rounded
+            <VProgressLinear :model-value="kpis.produccionEnProceso > 0 ?
+              (kpis.produccionEnProceso / kpis.totalProductos) * 100 : 0" color="primary" height="6" rounded
               class="mt-3" />
           </VCardText>
         </VCard>
@@ -143,7 +145,7 @@ const props = defineProps<{
       <VCol cols="12">
         <VAlert variant="tonal" color="info" border="start" elevation="2">
           <template #prepend>
-            <VIcon size="30" color="info">mdi-alert-circle-outline</VIcon>
+            <VIcon size="30">mdi-alert-circle-outline</VIcon>
           </template>
           <VAlertTitle class="text-h6">
             📦 Productos Pendientes de Programación
@@ -165,13 +167,6 @@ const props = defineProps<{
                 {{ kpis.productosDisponibles > 0 ? 'Pendiente' : 'Al día' }}
               </VChip>
             </div>
-            <VProgressLinear :model-value="kpis.totalProductos > 0 ?
-              ((kpis.totalProductos - kpis.productosDisponibles) / kpis.totalProductos) * 100 : 100" color="info"
-              height="12" rounded class="mt-3">
-              <strong>{{ kpis.totalProductos > 0 ?
-                Math.round(((kpis.totalProductos - kpis.productosDisponibles) / kpis.totalProductos) * 100) : 100
-                }}%</strong>
-            </VProgressLinear>
           </div>
         </VAlert>
       </VCol>

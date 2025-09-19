@@ -1,15 +1,33 @@
 <script lang="ts" setup>
 import type { Product } from '@/types/model'
 
-const { products, loading, error, fetchProducts, createProduct, updateProduct, deleteProduct } = useProduct()
+const { fetchProducts, createProduct, updateProduct, deleteProduct } = useProduct()
 const dialogOpen = ref(false)
 const isEditMode = ref(false)
 const selectedProduct = ref<Product | null>(null)
 const deleteDialog = ref()
 const showSuccess = ref(false)
 const textSuccess = ref('')
+const products = ref<Product[]>([])
+const loading = ref(false)
+const error = ref<string>('')
+const { data: sessionData } = useAuth()
 
-onMounted(fetchProducts)
+// Cargar productos inicialmente
+await loadProducts()
+
+async function loadProducts(): Promise<void> {
+  loading.value = true
+  error.value = ''
+  try {
+    products.value = await fetchProducts()
+    await new Promise(resolve => setTimeout(resolve, 2000))
+  } catch (err: any) {
+    error.value = err.message
+  } finally {
+    loading.value = false
+  }
+}
 
 // Métodos CRUD
 const openDialog = (edit: boolean, product: Product | null = null) => {
@@ -31,8 +49,8 @@ const openDeleteDialog = (product: Product) => {
 }
 
 const handleSubmit = async (product: Product) => {
-  product.userAt = 1
-  if (isEditMode.value && product.id) {
+  product.userAt = sessionData.value?.id || 1
+  if (isEditMode.value && product.id !== 0) {
     // Actualizar
     await updateProduct(product)
     textSuccess.value = 'Producto modificado Satisfactoriamente'
@@ -44,17 +62,17 @@ const handleSubmit = async (product: Product) => {
     textSuccess.value = 'Producto creado Satisfactoriamente'
     showSuccess.value = true
   }
-  await fetchProducts()
+  await loadProducts()
 }
 
 const handleDelete = async () => {
-  const id = selectedProduct?.value?.id
-  if (typeof id === 'number') {
-    await deleteProduct(id)
-    textSuccess.value = 'Producto eliminado Satisfactoriamente'
-    showSuccess.value = true
-    await fetchProducts()
-  }
+  if (!selectedProduct.value) return
+
+  const payload = { ...selectedProduct.value, userAt: sessionData.value?.id || 1 }
+  await deleteProduct(payload)
+  textSuccess.value = 'Producto eliminado satisfactoriamente'
+  showSuccess.value = true
+  await loadProducts()
 }
 </script>
 
@@ -64,10 +82,8 @@ const handleDelete = async () => {
       <VAlert v-if="error" type="error" class="mt-4" icon="mdi-database-off">
         Error de obtencion de datos: {{ error }}
       </VAlert>
-      <DeleteModal ref="deleteDialog" tag="Producto" :name="selectedProduct?.name ?? ''" @confirm="handleDelete" />
-      <ProductModal v-model="dialogOpen" :is-edit="isEditMode" :product="selectedProduct" @submit="handleSubmit" />
       <VDataTable :headers="headersProducts" :hide-default-footer="products?.length < 11" :items="products"
-        :loading="loading" loading-text="'Cargando productos...'">
+        :loading="loading" loading-text="Cargando productos...">
         <template #top>
           <VToolbar flat>
             <VToolbarTitle>
@@ -109,6 +125,8 @@ const handleDelete = async () => {
           No se han encontrado registros.
         </template>
       </VDataTable>
+      <DeleteModal ref="deleteDialog" tag="Producto" :name="selectedProduct?.name ?? ''" @confirm="handleDelete" />
+      <ProductModal v-model="dialogOpen" :is-edit="isEditMode" :product="selectedProduct" @submit="handleSubmit" />
       <VSnackbar v-model="showSuccess">
         {{ textSuccess }}
       </VSnackbar>

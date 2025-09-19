@@ -1,57 +1,87 @@
+import type { ApiResponse } from '@/types/api'
 import type { Product } from '@/types/model'
 
 export const useProduct = () => {
-  const baseURL = urlToApiBase('/product')
-  const product = ref<Product | null>(null)
-  const products = ref<Product[]>([])
-  const loading = ref(false)
-  const error = ref<any | null>(null)
+  const baseURL = '/siva/v1/product'
+  const { $api } = useNuxtApp()
 
-  const createProduct = async (payload: Product) => {
-    return await $fetch<Product>(`${baseURL}/add`, {
-      method: 'POST',
-      body: payload
-    })
-  }
-
-  const updateProduct = async (payload: Product) => {
-    return await $fetch<Product>(`${baseURL}/modify`, {
-      method: 'PUT',
-      body: payload
-    })
-  }
-
-  const deleteProduct = async (id: number) => {
-    return await $fetch<Product>(`${baseURL}/remove`, {
-      method: 'DELETE',
-      body: { id },
-    })
-  }
-
-  const fetchProducts = async () => {
-    loading.value = true
-    error.value = null
-
+  const fetchProducts = async (): Promise<Product[]> => {
     try {
-      const data = await $fetch<Product[]>(`${baseURL}/list`)
-      products.value = data
+      const response = await $api<ApiResponse<Product[]>>(`${baseURL}/list`)
+
+      if (response.success && response.data) {
+        return response.data
+      }
+      throw new Error(response.error || 'Error al obtener productos')
+    } catch (error: any) {
+      throw createError({
+        message: error.message,
+        statusCode: error.statusCode || 500
+      })
     }
-    catch (error: any) {
-      error.value = error.message || 'Fallo al obtener los productos'
+  }
+
+  const createProduct = async (productData: Product): Promise<Product> => {
+    try {
+      const response = await $api<ApiResponse<Product>>(`${baseURL}/add`, {
+        method: 'POST',
+        body: productData
+      })
+
+      if (response.success && response.data) {
+        return response.data
+      }
+      throw new Error(response.error || 'Error al crear producto')
+    } catch (error: any) {
+      console.log(error);
+      throw createError({
+        message: error.message,
+        statusCode: error.statusCode || 500
+      })
     }
-    finally {
-      loading.value = false
+  }
+
+  const updateProduct = async (productData: Product): Promise<Product> => {
+    try {
+      const response = await $api<ApiResponse<Product>>(`${baseURL}/modify`, {
+        method: 'PUT',
+        body: productData
+      })
+
+      if (response.success && response.data) {
+        return response.data
+      }
+      throw new Error(response.error || 'Error al actualizar producto')
+    } catch (error: any) {
+      throw createError({
+        message: error.message,
+        statusCode: error.statusCode || 500
+      })
+    }
+  }
+
+  const deleteProduct = async (productData: Product): Promise<void> => {
+    try {
+      const response = await $api<ApiResponse>(`${baseURL}/remove`, {
+        method: 'DELETE',
+        body: { id: productData.id, userAt: productData.userAt }
+      })
+
+      if (!response.success) {
+        throw new Error(response.error || 'Error al eliminar producto')
+      }
+    } catch (error: any) {
+      throw createError({
+        message: error.message,
+        statusCode: error.statusCode || 500
+      })
     }
   }
 
   return {
-    product,
-    products,
-    loading,
-    error,
     fetchProducts,
     createProduct,
     updateProduct,
-    deleteProduct,
+    deleteProduct
   }
 }

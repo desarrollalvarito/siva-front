@@ -21,11 +21,22 @@ export default defineNuxtConfig({
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE_URL, // can be overridden by NUXT_PUBLIC_API_BASE environment variable
       authOrigin: process.env.NUXT_AUTH_ORIGIN,
+      appEnv: process.env.NODE_ENV || 'development',
     },
   },
 
   devtools: {
     enabled: true,
+  },
+
+  nitro: {
+    routeRules: {
+      '/siva/**': {
+        proxy: {
+          to: `${process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:4001'}/api/**`,
+        }
+      }
+    }
   },
 
   css: [
@@ -48,13 +59,11 @@ export default defineNuxtConfig({
     }],
   },
 
-  plugins: ['@/plugins/vuetify/index.ts', '@/plugins/iconify/index.ts'],
+  plugins: ['@/plugins/vuetify/index.ts', '@/plugins/iconify/index.ts', '~/plugins/api.ts'],
 
   imports: {
     dirs: ['./@core/utils', './@core/composable/', './plugins/*/composables/*'],
   },
-
-  hooks: {},
 
   experimental: {
     typedPages: true,
@@ -155,7 +164,7 @@ export default defineNuxtConfig({
         type: 'Bearer',
         headerName: 'Authorization',
         cookieName: 'auth.token',
-        maxAgeInSeconds: 600, // 10 min
+        maxAgeInSeconds: 900, // 15 min
         sameSiteAttribute: 'lax',
         httpOnlyCookieAttribute: false,
       },
@@ -167,7 +176,7 @@ export default defineNuxtConfig({
           signInResponseRefreshTokenPointer: '/refreshToken',
           refreshResponseTokenPointer: '/token',
           cookieName: 'auth.refreshToken',
-          maxAgeInSeconds: 60 * 60 * 8,  //8 h
+          maxAgeInSeconds: 60 * 60 * 12,  //8 h
           sameSiteAttribute: 'lax',
           httpOnlyCookieAttribute: false,
         }

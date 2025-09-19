@@ -2,7 +2,7 @@
 import type { Order } from '@/types/model';
 import { VDateInput } from 'vuetify/labs/components';
 
-const { orders, loading, error, date, fetchOrders, createOrder, updateOrder, deleteOrder } = useOrder()
+const { fetchOrders, createOrder, updateOrder, deleteOrder } = useOrder()
 const dialogOpen = ref(false)
 const isEditMode = ref(false)
 const selectedOrder = ref<Order | null>(null)
@@ -11,16 +11,21 @@ const showSuccess = ref(false)
 const textSuccess = ref('')
 const recovery = ref(false)
 const searchDate = ref<Date>(new Date())
+const orders = ref<Order[]>([])
+const loading = ref(false)
+const error = ref<string>('')
 const orderEmpty = ref<Order>({
   id: 0,
   date: null,
   quantity: 0,
   state: '',
-  client: { billName: '', rut: '', shippingAddress: '', person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null } },
+  client: { id: 0, billName: '', rut: '', shippingAddress: '', person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null } },
   orderProduct: [],
   delivery: {
+    id: 0,
     status: 'CANCELLED',
     driver: {
+      id: 0,
       workShift: '',
       jobRole: '',
       person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null }
@@ -28,19 +33,20 @@ const orderEmpty = ref<Order>({
   }
 })
 
-// Función para determinar el color según el estado
-const getStateColor = (state: string) => {
-  switch (state) {
-    case 'PENDING': return 'warning'
-    case 'COMPLETED': return 'success'
-    case 'CANCELLED': return 'error'
-    default: return 'secondary'
-  }
-}
+await loadOrders()
 
-// Función para formatear el estado para mostrar
-const formatState = (state: string) => {
-  return statusList.find(item => item.value === state)?.title || state
+async function loadOrders(): Promise<void> {
+  loading.value = true
+  error.value = ''
+
+  try {
+    orders.value = await fetchOrders(searchDate.value.toISOString().split('T')[0])
+    await new Promise(resolve => setTimeout(resolve, 2000))
+  } catch (err: any) {
+    error.value = err.message
+  } finally {
+    loading.value = false
+  }
 }
 
 // Métodos CRUD
@@ -64,13 +70,8 @@ const openDeleteDialog = (recoveryOption: boolean, order: Order) => {
 }
 
 const updateDate = () => {
-  date.value = searchDate.value.toISOString().split('T')[0]
-  fetchOrders()
+  loadOrders()
 }
-
-onMounted(() => {
-  updateDate()
-})
 
 const handleSubmit = async (order: Order) => {
   try {
@@ -86,7 +87,7 @@ const handleSubmit = async (order: Order) => {
     }
     textSuccess.value = `Orden ${isEditMode.value ? 'actualizada' : 'creada'} satisfactoriamente`
     showSuccess.value = true
-    fetchOrders()
+    await loadOrders()
   }
   catch (error) {
     console.error('Error:', error)
@@ -108,7 +109,7 @@ const handleDelete = async () => {
       textSuccess.value = 'Orden recuperado Satisfactoriamente'
     }
     showSuccess.value = true
-    await fetchOrders()
+    await loadOrders()
   }
 }
 </script>

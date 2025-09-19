@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Employee } from '@/types/model';
+import type { Employee, Person } from '@/types/model';
 import { useDate } from 'vuetify';
 import { VDateInput } from 'vuetify/labs/components';
 
@@ -17,17 +17,24 @@ const emit = defineEmits<{
 }>()
 
 
-const { people, fetchPeople } = usePerson()
+const { fetchPeople } = usePerson()
 const search = ref('')
 const autocompleteOpen = ref(false)
 const isEditing = computed(() => props.isEdit && props.employee?.id)
 const isNewPerson = ref(false)
+const people = ref<Person[]>([])
+const formRef = ref()
+const loading = ref(false)
+const error = ref<string>('')
+// Fechas mínima y máxima
+const minDate = new Date(Date.now() - 100 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+const maxDate = new Date(Date.now() - 10 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
 // Formulario reactivo
 const form = ref<Employee>({
+  id: 0,
   workShift: '',
   jobRole: '',
-  personId: 0,
   person: {
     id: 0,
     run: '',
@@ -39,28 +46,29 @@ const form = ref<Employee>({
     contact: '',
   },
 })
+const formEmpty = JSON.parse(JSON.stringify(form.value))
+
+await loadPeople()
+
+async function loadPeople(): Promise<void> {
+  loading.value = true
+  error.value = ''
+  try {
+    people.value = await fetchPeople()
+    await new Promise(resolve => setTimeout(resolve, 2000))
+  } catch (err: any) {
+    error.value = err.message
+  } finally {
+    loading.value = false
+  }
+}
 
 // Reglas de validación
 const required = (v: string) => !!v || 'Campo requerido'
-const positiveNumber = (v: number) => v > 0 || 'Debe ser mayor a 0'
-const validateRun = (v: string) => /^\d{7,8}-[kK\d]$/.test(v) || 'RUN inválido'
+const validateRun = (v: string) => /^\d{4,8}-?[kK\d]$/.test(v) || 'RUN inválido'
 
 const resetForm = () => {
-  form.value = {
-    workShift: '',
-    jobRole: '',
-    personId: 0,
-    person: {
-      id: 0,
-      run: '',
-      names: '',
-      lastName: '',
-      gender: '',
-      address: '',
-      birthdate: null,
-      contact: '',
-    },
-  }
+  form.value = JSON.parse(JSON.stringify(formEmpty))
   search.value = ''
   isNewPerson.value = false
 }
@@ -71,7 +79,7 @@ watch(() => props.employee, newVal => {
     form.value = JSON.parse(JSON.stringify(newVal))
     form.value.person.birthdate = newVal.person.birthdate ? adapter.date(new Date(newVal.person.birthdate).toISOString().split('T')[0]) : null
     isNewPerson.value = false
-    search.value = newVal.person.run
+    search.value = newVal.person.run ?? ''
   }
   else {
     resetForm()
@@ -80,22 +88,23 @@ watch(() => props.employee, newVal => {
 
 // Método para habilitar campos
 const fieldsEnabled = computed(() => {
-  return isEditing.value || isNewPerson.value || form.value.personId > 0 ? true : false
+  return isEditing.value || isNewPerson.value || form.value.person.id > 0 ? true : false
 })
 
 const handleRunSelect = (personId: number) => {
   if (personId === 0) {
     // Caso para nuevo RUN
     isNewPerson.value = true
-    form.value.personId = 0
-    form.value.person.run = search.value
+    form.value.person.id = 0
+    if (form.value.person) {
+      form.value.person.run = search.value
+    }
     return
   }
 
   const selected = people.value.find(p => p.id === personId)
   if (selected) {
     form.value.person = { ...selected }
-    form.value.personId = selected.id
     isNewPerson.value = false
     search.value = selected.run
   }
@@ -103,27 +112,29 @@ const handleRunSelect = (personId: number) => {
 
 const registerNewRun = () => {
   isNewPerson.value = true
-  form.value.personId = 0
+  form.value.person.id = 0
   form.value.person.run = search.value
   autocompleteOpen.value = false
+}
+
+const handleSubmit = async () => {
+  // Validar el formulario antes de enviar
+  const { valid } = await formRef.value.validate()
+  console.log(valid);
+  if (valid) {
+    submitForm()
+  }
 }
 
 const submitForm = () => {
   emit('submit', form.value)
   emit('update:modelValue', false)
 }
-
-const cancel = () => {
-  resetForm()
-  emit('update:modelValue', false)
-}
-
-onMounted(fetchPeople)
 </script>
 
 <template>
   <VDialog max-width="600" :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)">
-    <VForm @submit.prevent="submitForm">
+    <VForm @submit.prevent="handleSubmit" ref="formRef">
       <VCard :title="`${isEdit ? 'Modificar' : 'Nuevo'} empleado`">
         <VCardText>
           <VCard title="Datos Personales" class="mb-4" variant="outlined">
@@ -132,8 +143,8 @@ onMounted(fetchPeople)
                 <VCol cols="12" md="9">
                   <VAutocomplete v-model="form.person.run" :items="people" label="Buscar por RUN" item-title="run"
                     item-value="id" placeholder="12345678-9" clearable :hide-no-data="false" :search="search"
-                    @update:search="val => search = val" @update:model-value="handleRunSelect" :rules="[required]"
-                    :disabled="fieldsEnabled">
+                    @update:search="val => search = val" @update:model-value="handleRunSelect"
+                    :rules="[required, validateRun]" :disabled="fieldsEnabled">
                     <template #item="{ props, item }">
                       <VListItem v-bind="props" :subtitle="`${item.raw.names} ${item.raw.lastName}`"
                         :title="item.raw.run" />
@@ -164,11 +175,11 @@ onMounted(fetchPeople)
               <VRow>
                 <VCol cols="12" md="6">
                   <VSelect v-model="form.person.gender" label="Genero" placeholder="Seleccione su genero"
-                    :items="genderList" :disabled="!fieldsEnabled" />
+                    :items="genderList" :disabled="!fieldsEnabled" :rules="[required]" />
                 </VCol>
                 <VCol cols="12" md="6">
                   <VDateInput v-model="form.person.birthdate" label="Fecha de nacimiento" placeholder="01/01/1991"
-                    prepend-icon="" :disabled="!fieldsEnabled" />
+                    prepend-icon="" :disabled="!fieldsEnabled" :min="minDate" :max="maxDate" :rules="[required]" />
                 </VCol>
               </VRow>
               <VRow>
@@ -202,7 +213,7 @@ onMounted(fetchPeople)
         <VDivider />
 
         <VCardActions class="bg-surface-light">
-          <VBtn text="Cancelar" variant="plain" @click="cancel" />
+          <VBtn text="Cancelar" variant="plain" @click="$emit('update:modelValue', false)" />
           <VSpacer />
           <VBtn type="submit">
             {{ isEdit ? 'Actualizar' : 'Crear' }}

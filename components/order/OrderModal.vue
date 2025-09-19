@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Order, Product } from '@/types/model';
+import type { Client, Employee, Order, Product } from '@/types/model';
 import { useDate } from 'vuetify';
 import { VDateInput } from 'vuetify/labs/components';
 
@@ -17,9 +17,12 @@ const emit = defineEmits<{
 }>()
 
 
-const { clients, fetchClients } = useClient()
-const { employees, fetchEmployees } = useEmployee()
-const { products, fetchProducts } = useProduct()
+const { fetchClients } = useClient()
+const { fetchEmployees } = useEmployee()
+const { fetchProducts } = useProduct()
+const clients = ref<Client[]>([])
+const employees = ref<Employee[]>([])
+const products = ref<Product[]>([])
 const searchClient = ref('')
 const searchDriver = ref('')
 const isEditing = computed(() => props.isEdit && props.order?.id)
@@ -36,11 +39,13 @@ const form = ref<Order>({
   date: null,
   quantity: 0,
   state: '',
-  client: { billName: '', rut: '', shippingAddress: '', person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null } },
+  client: { id: 0, billName: '', rut: '', shippingAddress: '', person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null } },
   orderProduct: [],
   delivery: {
+    id: 0,
     status: 'CANCELLED',
     driver: {
+      id: 0,
       workShift: '',
       jobRole: '',
       person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null }
@@ -49,6 +54,14 @@ const form = ref<Order>({
 })
 
 const formEmpty = JSON.parse(JSON.stringify(form.value))
+
+await loadData()
+async function loadData() {
+  let [clientsData, employeesData, productsData] = await Promise.all([fetchClients(), fetchEmployees(), fetchProducts()])
+  clients.value = clientsData
+  employees.value = employeesData
+  products.value = productsData
+}
 
 // Reglas de validación
 const required = (v: string) => !!v || 'Campo requerido'
@@ -114,10 +127,10 @@ const handleClientSelect = (clientId: number) => {
 }
 
 const handleDriverSelect = (driverId: number) => {
-  const selected = employees.value.find(emp => emp.id === driverId)
+  const selected = employeeFiltered.value.find(emp => emp.id === driverId)
   if (selected && form.value.delivery) {
     form.value.delivery.driver = { ...selected }
-    searchDriver.value = selected.person.names + " " + selected.person.lastName
+    searchDriver.value = selected.displayName
   }
 }
 
@@ -143,7 +156,7 @@ const employeeFiltered = computed(() => {
       ...emp,
       displayName: `${emp.person?.names || ''} ${emp.person?.lastName || ''}`.trim() || 'Nombre no disponible',
       // Información adicional útil
-      subtitle: `RUT: ${emp.person?.run || 'N/A'} - ${emp.jobRole || 'N/A'}`
+      subtitle: `RUN: ${emp.person?.run || 'N/A'} - ${emp.jobRole || 'N/A'}`
     }))
 })
 
@@ -178,6 +191,7 @@ const addProduct = () => {
     } else {
       // Si no existe, agregar nuevo producto
       form.value.orderProduct.push({
+        id: 0,
         orderId: Number(form.value.id),
         product: selectedProduct.value,
         quantity: productQuantity.value,
@@ -205,12 +219,6 @@ const updateTotal = () => {
   // Forzar reactividad
   form.value.orderProduct = [...form.value.orderProduct]
 }
-
-onMounted(async () => {
-  fetchClients()
-  fetchEmployees()
-  fetchProducts()
-})
 </script>
 
 <template>
@@ -220,12 +228,12 @@ onMounted(async () => {
         <VCardText>
           <VRow>
             <VCol cols="12" md="6">
-              <VAutocomplete v-model="form.client.id" :items="clients" label="Seleccionar Cliente" item-title="billName"
-                item-value="id" placeholder="Buscar Cliente por RUT" clearable :hide-no-data="false"
-                :search="searchClient" @update:model-value="handleClientSelect" :rules="[required]"
+              <VAutocomplete v-model="form.client.rut" :items="clients" label="Seleccionar Cliente"
+                item-title="billName" item-value="id" placeholder="Buscar Cliente por RUT" clearable
+                :hide-no-data="false" @update:model-value="handleClientSelect" :rules="[required]"
                 :disabled="fieldsEnabled">
                 <template #item="{ props, item }">
-                  <VListItem v-bind="props" :subtitle="item.raw.billName" :title="item.raw.rut" />
+                  <VListItem v-bind="props" :subtitle="item.raw.rut" :title="item.raw.billName" />
                 </template>
               </VAutocomplete>
             </VCol>
@@ -240,7 +248,7 @@ onMounted(async () => {
                 :disabled="!fieldsEnabled" @update:model-value="handleDeliverySwitch" />
             </VCol>
             <VCol cols="6" md="6">
-              <VAutocomplete v-model="form.delivery.driver.id" :items="employeeFiltered"
+              <VAutocomplete v-model="form.delivery.driver.person.run" :items="employeeFiltered"
                 :label="form.delivery ? 'Seleccionar conductor' : 'Active entrega para habilitar'"
                 item-title="displayName" item-value="id" placeholder="Buscar conductor" clearable
                 @update:model-value="handleDriverSelect" :disabled="!isDelivery">

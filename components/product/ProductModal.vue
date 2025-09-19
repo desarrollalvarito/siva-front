@@ -14,16 +14,17 @@ const emit = defineEmits<{
 
 // Formulario reactivo
 const form = ref<Product>({
+  id: 0,
   name: '',
   price: 0,
 })
+const formEmpty = JSON.parse(JSON.stringify(form.value))
+
+// ✅ Referencia al formulario para validar
+const formRef = ref()
 
 const resetForm = () => {
-  form.value = {
-    id: undefined, // Importante para diferenciar creación/edición
-    name: '',
-    price: 0,
-  }
+  form.value = JSON.parse(JSON.stringify(formEmpty))
 }
 
 // Reglas de validación
@@ -37,19 +38,28 @@ watch(() => props.product, newVal => {
   else resetForm()
 }, { immediate: true })
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
+  // Validar el formulario antes de enviar
+  const { valid } = await formRef.value.validate()
+  if (valid) {
+    submitForm()
+  }
+}
+
+const submitForm = () => {
   emit('submit', form.value)
   emit('update:modelValue', false)
+  resetForm()
 }
 </script>
 
 <template>
   <VDialog max-width="600" :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)">
-    <VForm @submit.prevent="handleSubmit">
+    <VForm @submit.prevent="handleSubmit" ref="formRef">
       <VCard :title="`${isEdit ? 'Modificar' : 'Nuevo'} producto`">
         <VCardText>
           <VRow>
-            <VCol cols="12">
+            <VCol cols="12" md="6">
               <VTextField v-model="form.name" label="Nombre del producto" :rules="[required]" />
             </VCol>
 

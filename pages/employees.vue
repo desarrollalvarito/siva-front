@@ -1,19 +1,21 @@
 <script lang="ts" setup>
-import type { Employee } from '@/types/model'
+import type { Employee, Person } from '@/types/model'
 
-const { employees, loading, error, fetchEmployees, createEmployee, updateEmployee, deleteEmployee } = useEmployee()
-const { error: errorPerson, createPerson, updatePerson } = usePerson()
+const { fetchEmployees, createEmployee, updateEmployee, deleteEmployee } = useEmployee()
+const { createPerson, updatePerson } = usePerson()
 const dialogOpen = ref(false)
 const isEditMode = ref(false)
 const selectedEmployee = ref<Employee | null>(null)
 const deleteDialog = ref()
 const showSuccess = ref(false)
-const successMessage = ref('')
+const textSuccess = ref('')
+const employees = ref<Employee[]>([])
+const loading = ref(false)
+const error = ref<string>('')
 const employeeEmpty = <Employee>{
-  id: undefined,
+  id: 0,
   workShift: '',
   jobRole: '',
-  personId: 0,
   person: {
     id: 0,
     run: '',
@@ -26,7 +28,21 @@ const employeeEmpty = <Employee>{
   },
 }
 
-onMounted(fetchEmployees)
+await loadEmployees()
+
+async function loadEmployees(): Promise<void> {
+  loading.value = true
+  error.value = ''
+
+  try {
+    employees.value = await fetchEmployees()
+    await new Promise(resolve => setTimeout(resolve, 2000))
+  } catch (err: any) {
+    error.value = err.message
+  } finally {
+    loading.value = false
+  }
+}
 
 // Métodos CRUD
 const openDialog = (edit: boolean, employee: Employee | null = null) => {
@@ -49,17 +65,17 @@ const handleSubmit = async (employee: Employee) => {
     }
     else {
       // Para nuevos empleados, primero crear persona si es necesario
-      if (employee.personId === 0) {
-        const newPerson = await createPerson(employee.person)
-        employee.personId = newPerson.id
+      if (employee.person.id === 0) {
+        const newPerson: Person = await createPerson(employee.person)
+        if (newPerson?.id) (employee as any).personId = newPerson.id
       }
       await createEmployee(employee)
     }
-    successMessage.value = `Empleado ${isEditMode.value ? 'actualizado' : 'creado'} satisfactoriamente`
+    textSuccess.value = `Empleado ${isEditMode.value ? 'actualizado' : 'creado'} satisfactoriamente`
     showSuccess.value = true
-    fetchEmployees()
-  } catch (error) {
-    console.error('Error:', error)
+    await loadEmployees()
+  } catch (err: any) {
+    error.value = err?.message || 'Ocurrió un error al guardar el cliente'
   } finally {
     loading.value = false
   }
@@ -68,9 +84,9 @@ const handleSubmit = async (employee: Employee) => {
 const handleDelete = async () => {
   if (!selectedEmployee.value?.id) return
   await deleteEmployee(selectedEmployee.value.id)
-  successMessage.value = 'Empleado eliminado'
+  textSuccess.value = 'Empleado eliminado'
   showSuccess.value = true
-  fetchEmployees()
+  await loadEmployees()
 }
 
 const formatValue = (value: string) => {
@@ -84,9 +100,6 @@ const formatValue = (value: string) => {
       <VAlert v-if="error" type="error" class="mt-4" icon="mdi-database-off">
         Error de obtencion de datos: {{ error }}
       </VAlert>
-      <DeleteModal ref="deleteDialog" tag="Empleado" :name="selectedEmployee?.person?.names ?? ''"
-        @confirm="handleDelete" />
-      <EmployeeModal v-model="dialogOpen" :is-edit="isEditMode" :employee="selectedEmployee" @submit="handleSubmit" />
       <VDataTable :headers="headersEmployees" :hide-default-footer="employees?.length < 11" :items="employees"
         :loading="loading" loading-text="Cargando empleados...">
         <template #top>
@@ -127,8 +140,11 @@ const formatValue = (value: string) => {
           No se han encontrado registros.
         </template>
       </VDataTable>
+      <DeleteModal ref="deleteDialog" tag="Empleado" :name="selectedEmployee?.person?.names ?? ''"
+        @confirm="handleDelete" />
+      <EmployeeModal v-model="dialogOpen" :is-edit="isEditMode" :employee="selectedEmployee" @submit="handleSubmit" />
       <VSnackbar v-model="showSuccess">
-        {{ successMessage }}
+        {{ textSuccess }}
       </VSnackbar>
     </ClientOnly>
   </VSheet>

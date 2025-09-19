@@ -38,6 +38,7 @@ const form = ref<Production>({
   status: 'PENDING',
   productionProduct: []
 })
+const formEmpty = JSON.parse(JSON.stringify(form.value))
 
 // Datos de productos procesados
 const processedProducts = ref<Array<{
@@ -108,8 +109,6 @@ const updateProductionQuantity = (productId: number, quantity: number) => {
 const totalAssigned = computed(() => {
   return processedProducts.value.reduce((total, product) => total + product.quantity, 0)
 })
-
-const formEmpty = JSON.parse(JSON.stringify(form.value))
 
 const resetForm = () => {
   form.value = JSON.parse(JSON.stringify(formEmpty))
