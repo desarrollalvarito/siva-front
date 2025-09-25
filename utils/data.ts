@@ -76,6 +76,7 @@ export const headersClients = [
 ]
 
 export const headersOrders = [
+  { title: 'ID', key: 'id', align: 'start' },
   { title: 'RUT', key: 'client.rut', align: 'start' },
   { title: 'Cliente', key: 'client.billName', align: 'center' },
   { title: 'Cantidad', key: 'quantity', align: 'center' },

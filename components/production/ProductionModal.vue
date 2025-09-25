@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Production } from '@/types/model';
+import type { Employee, Production } from '@/types/model';
 import { useDate } from 'vuetify';
 import { VDateInput } from 'vuetify/labs/components';
 
@@ -17,9 +17,11 @@ const emit = defineEmits<{
   (e: 'submit', production: Production): void
 }>()
 
-const { employees, fetchEmployees } = useEmployee()
-const searchCook = ref('')
+const { fetchEmployees } = useEmployee()
+const employees = ref<Employee[]>([])
 const isEditing = computed(() => props.isEdit && props.production?.id)
+const formRef = ref()
+const showError = ref(false)
 
 // Fechas
 const today = new Date()
@@ -30,6 +32,7 @@ const maxDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().s
 const form = ref<Production>({
   id: 0,
   cook: {
+    id: 0,
     workShift: '',
     jobRole: '',
     person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null },
@@ -51,6 +54,11 @@ const processedProducts = ref<Array<{
   available: number
 }>>([])
 
+async function loadProduction() {
+  employees.value = await fetchEmployees()
+  calculateProcessedProducts()
+}
+
 // Calcular productos procesados
 const calculateProcessedProducts = () => {
   processedProducts.value = props.ordersProductions.map(item => {
@@ -70,6 +78,8 @@ const calculateProcessedProducts = () => {
     }
   })
 }
+
+await loadProduction()
 
 // Actualizar cantidad de producción
 const updateProductionQuantity = (productId: number, quantity: number) => {
@@ -110,10 +120,13 @@ const totalAssigned = computed(() => {
   return processedProducts.value.reduce((total, product) => total + product.quantity, 0)
 })
 
+const hasProductAdded = computed(() => {
+  return form.value.productionProduct.some(op => op.quantity > 0)
+})
+
 const resetForm = () => {
   form.value = JSON.parse(JSON.stringify(formEmpty))
   form.value.date = today
-  searchCook.value = ''
   calculateProcessedProducts()
 }
 
@@ -135,7 +148,6 @@ watch(() => props.production, newVal => {
     if (isNullOrUndefined(newVal.cook)) {
       form.value.cook = JSON.parse(JSON.stringify(formEmpty.cook))
     }
-    searchCook.value = newVal?.cook?.person.names || ''
     form.value.date = newVal.date ? adapter.date(new Date(newVal.date).toISOString().split('T')[0]) : new Date()
     // Recalcular productos procesados después de cargar la producción
     calculateProcessedProducts()
@@ -151,19 +163,13 @@ watch(() => props.ordersProductions, () => {
 
 // Método para habilitar campos
 const fieldsEnabled = computed(() => {
-  return isEditing.value || (form.value.cook?.id ?? 0) > 0 ? true : false
+  return isEditing.value || (form.value.cook.id) > 0 ? true : false
 })
-
-const handleSubmit = () => {
-  emit('submit', form.value)
-  emit('update:modelValue', false)
-}
 
 const handleCookSelect = (cookId: number) => {
   const selected = employeeFiltered.value.find(emp => emp.id === cookId)
   if (selected && form.value.cook) {
     form.value.cook = { ...selected }
-    searchCook.value = selected.displayName
   }
 }
 
@@ -184,11 +190,6 @@ const formatAvailable = (available: number) => {
   return available >= 0 ? 'Sobran: ' + Math.abs(available) : 'Faltan: ' + Math.abs(available)
 }
 
-const cancel = () => {
-  emit('update:modelValue', false)
-  resetForm()
-}
-
 // Validar cantidad máxima
 const validateMaxQuantity = (product: any, quantity: number) => {
   // Puede producir hasta 500 de lo pendiente como máximo
@@ -196,22 +197,42 @@ const validateMaxQuantity = (product: any, quantity: number) => {
   return Math.min(quantity, maxQuantity)
 }
 
-onMounted(async () => {
-  fetchEmployees()
-  calculateProcessedProducts()
-})
+const cancel = () => {
+  emit('update:modelValue', false)
+  resetForm()
+}
+
+const handleSubmit = async () => {
+  // Validar el formulario antes de enviar
+  const { valid } = await formRef.value.validate()
+  if (valid && hasProductAdded.value) {
+    submitForm()
+  }
+  if (!hasProductAdded.value) {
+    showError.value = true
+    setTimeout(() => {
+      showError.value = false
+    }, 3000)
+  }
+}
+
+const submitForm = () => {
+  emit('submit', form.value)
+  emit('update:modelValue', false)
+}
+
 </script>
 
 <template>
   <VDialog max-width="900" :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)">
-    <VForm @submit.prevent="handleSubmit">
+    <VForm @submit.prevent="handleSubmit" ref="formRef">
       <VCard :title="`${isEdit ? 'Modificar' : 'Nueva'} producion`">
         <VCardText>
           <VRow>
             <VCol cols="12" md="6">
               <VAutocomplete v-model="form.cook.id" :items="employeeFiltered" label="Seleccionar Hornero"
-                item-title="displayName" item-value="id" placeholder="Buscar Hornero por RUN" clearable
-                :hide-no-data="false" :search="searchCook" @update:model-value="handleCookSelect" :rules="[required]"
+                :item-title="getFullName" item-value="id" placeholder="Buscar Hornero por Nombre" clearable
+                :hide-no-data="false" @update:model-value="handleCookSelect" :rules="[required]"
                 :disabled="fieldsEnabled">
                 <template #item="{ props, item }">
                   <VListItem v-bind="props" :subtitle="item.raw.subtitle" :title="item.raw.displayName" />
@@ -255,7 +276,7 @@ onMounted(async () => {
                 <VTextField v-model.number="item.quantity" type="number" density="compact" variant="outlined"
                   hide-details class="quantity-input" style="max-inline-size: 100px;" :min="0" :max="item.pending + 500"
                   @update:model-value="updateProductionQuantity(item.id, $event)"
-                  @blur="updateProductionQuantity(item.id, item.quantity)" />
+                  @blur="updateProductionQuantity(item.id, item.quantity)" :disabled="!fieldsEnabled" />
               </template>
 
               <template v-slot:item.available="{ item }">
@@ -266,6 +287,15 @@ onMounted(async () => {
               </template>
             </VDataTable>
             <VCardText class="bg-grey-lighten-4">
+              <VRow v-if="showError" class="mb-2">
+                <VCol cols="12">
+                  <div class="pa-1 m-5 text-center bg-red rounded text-white color-red">
+                    <VIcon icon="mdi-alert"></VIcon><span> Debe añadir al menos una cantidad a producir
+                      para continuar
+                    </span>
+                  </div>
+                </VCol>
+              </VRow>
               <VRow>
                 <VCol cols="12" md="6">
                   <div class="d-flex align-center">

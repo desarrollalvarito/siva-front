@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { Production } from '@/types/model';
+import { VProgressCircular } from 'vuetify/components';
 import { VDateInput } from 'vuetify/labs/components';
 
-const { productions, loading, error, date, kpis, ordersProductions, fetchOrdersProductions, fetchMetrics, fetchProductions, createProduction, updateProduction, deleteProduction } = useProduction()
+const { fetchOrdersProductions, fetchMetrics, fetchProductions, createProduction, updateProduction, deleteProduction } = useProduction()
 const dialogOpen = ref(false)
 const isEditMode = ref(false)
 const selectedProduction = ref<Production | null>(null)
@@ -13,21 +14,45 @@ const showSuccess = ref(false)
 const textSuccess = ref('')
 const recovery = ref(false)
 const searchDate = ref<Date>(new Date())
+const ordersProductions = ref<any[]>([])
+const productions = ref<Production[]>([])
+const kpis = ref<{}>({})
+const loading = ref(false)
+const loadingAssignments = ref(false)
+const error = ref<string>('')
+
+// Estado para las asignaciones de producción
+const productionAssignments = ref<any[]>([])
 const ProductionEmpty = ref<Production>({
   id: 0,
   cook: {
+    id: 0,
     workShift: '',
     jobRole: '',
     person: { id: 0, run: '', names: '', lastName: '', gender: '', birthdate: null },
   },
-  date: new Date().toISOString().split('T')[0],
+  date: null,
   status: '',
   productionProduct: []
 })
 
-// Estado para las asignaciones de producción
-const productionAssignments = ref<any[]>([])
-const loadingAssignments = ref(false)
+await loadProductions()
+
+async function loadProductions(): Promise<void> {
+  loading.value = true
+  error.value = ''
+
+  try {
+    productions.value = await fetchProductions(searchDate.value.toISOString().split('T')[0])
+    kpis.value = await fetchMetrics(searchDate.value.toISOString().split('T')[0])
+    ordersProductions.value = await fetchOrdersProductions(searchDate.value.toISOString().split('T')[0])
+    await new Promise(resolve => setTimeout(resolve, 2000))
+  } catch (err: any) {
+    error.value = err.message
+  } finally {
+    loading.value = false
+  }
+}
 
 // Métodos CRUD
 const openDialog = (edit: boolean, production: Production | null = null) => {
@@ -49,11 +74,8 @@ const openDeleteDialog = (recoveryOption: boolean, production: Production) => {
   deleteDialog.value?.open()
 }
 
-const updateDate = () => {
-  date.value = searchDate.value.toISOString().split('T')[0]
-  fetchProductions()
-  fetchMetrics()
-  fetchOrdersProductions()
+const updateDate = async () => {
+  await loadProductions()
 }
 
 // Cargar asignaciones de producción
@@ -65,19 +87,15 @@ const loadProductionAssignments = async () => {
       ...p,
       totalAssigned: p.productionProduct.reduce((total, product) => total + product.quantity, 0),
     }))
-
-    // Abrir el diálogo de reporte
-    reportDialog.value?.open()
+    setTimeout(() => {
+      loadingAssignments.value = false
+      // Abrir el diálogo de reporte
+      reportDialog.value?.open()
+    }, 2000)
   } catch (error) {
     console.error('Error cargando asignaciones:', error)
-  } finally {
-    loadingAssignments.value = false
   }
 }
-
-onMounted(() => {
-  updateDate()
-})
 
 const handleSubmit = async (Production: Production) => {
   try {
@@ -115,7 +133,7 @@ const handleDelete = async () => {
       textSuccess.value = 'Orden recuperado Satisfactoriamente'
     }
     showSuccess.value = true
-    await fetchProductions()
+    await loadProductions()
   }
 }
 
@@ -131,6 +149,7 @@ const setStartProduction = async (production: Production) => {
       textSuccess.value = 'Producción marcada como "En Producción"'
       showSuccess.value = true
     }
+    await loadProductions() // Actualizar la lista
   } catch (error) {
     console.error('Error actualizando estado:', error)
   }
@@ -147,7 +166,7 @@ const setAllToProduction = async () => {
     }
     textSuccess.value = 'Todas las producciones marcadas como "En Producción"'
     showSuccess.value = true
-    await fetchProductions() // Actualizar la lista
+    await loadProductions() // Actualizar la lista
   } catch (error) {
     console.error('Error actualizando estados:', error)
   }
@@ -180,7 +199,7 @@ const setAllToProduction = async () => {
             </VBtn>
           </VToolbar>
 
-          <VDataIterator :items="productions" :page="page">
+          <VDataIterator :items="productions" :page="page" :loading="loading">
             <template v-slot:default="{ items }">
               <VContainer class="pa-3" fluid>
                 <VRow>
@@ -201,8 +220,16 @@ const setAllToProduction = async () => {
               </VContainer>
             </template>
 
+            <template #loader>
+              <VContainer class="text-center py-8">
+                <VProgressCircular size="32" color="primary" class="mb-4" indeterminate />
+                <div class="text-h6 text-grey-lighten-1 mt-2">Cargando la produccion</div>
+                <div class="text-body-2 text-grey">Espera un momento...</div>
+              </VContainer>
+            </template>
+
             <template #footer>
-              <VContainer class="d-flex justify-center py-4" v-if="productions.length > 0">
+              <VContainer class="d-flex justify-center py-4" v-if="productions.length > 0 && loading === false">
                 <VBtn color="secondary" prepend-icon="mdi-file-document-outline" rounded="lg"
                   @click="loadProductionAssignments" :loading="loadingAssignments" elevation="1" class="mr-2">
                   Reporte de Asignaciones

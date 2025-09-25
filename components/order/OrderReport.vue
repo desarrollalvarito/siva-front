@@ -4,7 +4,7 @@
       <VToolbar color="primary" dark>
         <VToolbarTitle>
           <VIcon icon="mdi-file-document-outline" class="mr-2" />
-          Reporte de Asignaciones de Producción
+          Reporte de Asignaciones de Entregas
         </VToolbarTitle>
         <VSpacer />
         <VBtn icon @click="close">
@@ -20,32 +20,45 @@
         </VRow>
 
         <VAlert v-if="!hasAssignments" type="info" class="mb-4">
-          No hay asignaciones en producción para mostrar.
+          No hay entregas para mostrar.
         </VAlert>
 
         <VTable v-else density="comfortable">
           <thead>
             <tr>
-              <th>Cocinero</th>
+              <th>Conductor</th>
+              <th>Cliente</th>
               <th>Producto</th>
-              <th>Cantidad Asignada</th>
+              <th>Cantidad</th>
             </tr>
           </thead>
           <tbody>
             <template v-for="assignment in assignments" :key="assignment.id">
-              <tr v-for="(production, index) in assignment.productionProduct" :key="production.id">
-                <td v-if="index === 0" :rowspan="assignment.productionProduct.length + 1">
-                  <div class="font-weight-bold">{{ assignment.cook.person.names }}</div>
-                  <div class="text-caption">RUN: {{ assignment.cook.person.run }}</div>
-                  <div class="text-caption">Turno: {{ assignment.cook.workShift }}</div>
+              <tr v-for="(order, index) in assignment.orderProduct" :key="order.id">
+                <td v-if="index === 0" :rowspan="assignment.orderProduct.length + 2">
+                  <div class="font-weight-bold">{{ getFullName(assignment?.delivery?.driver) }}</div>
+                  <div class="text-caption">RUN: {{ assignment?.delivery?.driver.person.run }}</div>
+                  <div class="text-caption">Turno: {{ assignment?.delivery?.driver.workShift }}</div>
                 </td>
-                <td>{{ production.product.name }}</td>
-                <td align="right">{{ production.quantity }}</td>
+                <td v-if="index === 0" :rowspan="assignment.orderProduct.length + 2">
+                  <div class="font-weight-bold">{{ getFullName(assignment?.client) }}</div>
+                  <div class="text-caption">RUN: {{ assignment?.client?.person?.run }}</div>
+                  <div class="text-caption">RUT: {{ assignment?.client?.rut }}</div>
+                  <div class="text-caption">DIRECCION: {{ assignment?.client?.shippingAddress }}</div>
+                  <div class="text-caption">NRO. CONTACTO: {{ assignment?.client?.person?.contact }}</div>
+                </td>
+                <td>{{ order.product.name }}</td>
+                <td align="right">{{ order.quantity }}</td>
               </tr>
               <tr class="total-row">
-                <td class="text-right font-weight-bold">Total:</td>
+                <td class="text-right font-weight-bold">Total de Productos:</td>
                 <td align="center"><span class="font-weight-bold">{{
                   assignment.totalAssigned }}</span></td>
+              </tr>
+              <tr class="total-row">
+                <td class="text-right font-weight-bold">Monto Total:</td>
+                <td align="center"><span class="font-weight-bold">$ {{
+                  assignment.mountAssigned }}</span></td>
               </tr>
             </template>
           </tbody>
@@ -92,7 +105,7 @@ const formattedDate = computed(() => {
 })
 
 const hasAssignments = computed(() => {
-  return props.assignments.some(assignment => assignment.status === 'IN_PROGRESS')
+  return props.assignments.some((assignment) => (assignment as any).state === 'PENDING')
 })
 
 // Métodos

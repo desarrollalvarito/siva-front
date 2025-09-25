@@ -27,3 +27,9 @@ export const getStateColor = (state: string) => {
 export const formatState = (state: string) => {
   return statusList.find(item => item.value === state)?.title || state
 }
+
+//funcion para obtener nombre completo
+export const getFullName = (item: any) => {
+  if (!item || !item.person) return ''
+  return `${item.person.names || ''} ${item.person.lastName || ''}`.trim() || 'N/A'
+}

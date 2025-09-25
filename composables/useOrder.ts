@@ -4,6 +4,7 @@ import type { Order } from '@/types/model'
 export const useOrder = () => {
   const baseURL = '/siva/v1/order'
   const { $api } = useNuxtApp()
+  const totalOrders = ref(Array<{ id: number; name: string; price: number; total: number }>([]))
 
   const fetchOrders = async (dateOrder: string): Promise<Order[]> => {
     try {
@@ -31,8 +32,8 @@ export const useOrder = () => {
       })
       if (response.success && response.data) return response.data
       throw new Error(response.error || 'Error al crear pedido')
-    } catch (err: any) {
-      throw createError({ message: err.message, statusCode: err.statusCode || 500 })
+    } catch (error: any) {
+      throw createError({ message: error.message, statusCode: error.statusCode || 500 })
     }
   }
 
@@ -43,9 +44,9 @@ export const useOrder = () => {
         body: payload
       })
       if (response.success && response.data) return response.data
-      throw new Error(response.error || 'Error al crear pedido')
-    } catch (err: any) {
-      throw createError({ message: err.message, statusCode: err.statusCode || 500 })
+      throw new Error(response.error || 'Error al modificar pedido')
+    } catch (error: any) {
+      throw createError({ message: error.message, statusCode: error.statusCode || 500 })
     }
   }
 
@@ -56,16 +57,28 @@ export const useOrder = () => {
         body: { id }
       })
       if (!response.success) throw new Error(response.error || 'Error al eliminar pedido')
-    } catch (err: any) {
-      throw createError({ message: err.message, statusCode: err.statusCode || 500 })
+    } catch (error: any) {
+      throw createError({ message: error.message, statusCode: error.statusCode || 500 })
     }
   }
 
-  const totalOrders = async (date: string) => {
-    return await $fetch<Order>(`${baseURL}/total`, {
-      method: 'POST',
-      body: { date },
-    })
+  const fetchTotalOrders = async (dateOrder: string): Promise<typeof totalOrders.value> => {
+    try {
+      const response = await $api<ApiResponse<typeof totalOrders.value>>(`${baseURL}/total`, {
+        method: 'POST',
+        body: { dateOrder }
+      })
+      if (response.success && response.data) {
+        return response.data
+      } else {
+        throw new Error(response.error || 'Error al obtener el total de ordenes')
+      }
+    } catch (error: any) {
+      throw createError({
+        message: error.message,
+        statusCode: error.statusCode || 500
+      })
+    }
   }
 
   return {
@@ -73,6 +86,6 @@ export const useOrder = () => {
     createOrder,
     updateOrder,
     deleteOrder,
-    totalOrders
+    fetchTotalOrders,
   }
 }

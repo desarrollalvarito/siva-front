@@ -7,6 +7,7 @@ const dialogOpen = ref(false)
 const isEditMode = ref(false)
 const selectedOrder = ref<Order | null>(null)
 const deleteDialog = ref()
+const reportDialog = ref() // Referencia para el diálogo de reporte
 const showSuccess = ref(false)
 const textSuccess = ref('')
 const recovery = ref(false)
@@ -14,6 +15,17 @@ const searchDate = ref<Date>(new Date())
 const orders = ref<Order[]>([])
 const loading = ref(false)
 const error = ref<string>('')
+const loadingAssignments = ref(false)
+
+// Estado para las asignaciones de producción
+const deliveryAssignments = computed(() => {
+  return orders.value.filter(o => o.state && o.delivery?.status === 'PENDING')
+    .map(o => ({
+      ...o,
+      totalAssigned: o.orderProduct.reduce((total, product) => total + product.quantity, 0),
+      mountAssigned: o.orderProduct.reduce((total, product) => total + (product.quantity * product.product.price), 0),
+    }))
+})
 const orderEmpty = ref<Order>({
   id: 0,
   date: null,
@@ -69,8 +81,23 @@ const openDeleteDialog = (recoveryOption: boolean, order: Order) => {
   deleteDialog.value?.open()
 }
 
-const updateDate = () => {
-  loadOrders()
+const updateDate = async () => {
+  await loadOrders()
+}
+
+// Cargar asignaciones de producción
+const loadProductionAssignments = async () => {
+  try {
+    loadingAssignments.value = true
+    // Simular carga de datos (en producción, esto vendría de tu API)
+    setTimeout(() => {
+      loadingAssignments.value = false
+      // Abrir el diálogo de reporte
+      reportDialog.value?.open()
+    }, 2000)
+  } catch (error) {
+    console.error('Error cargando asignaciones:', error)
+  }
 }
 
 const handleSubmit = async (order: Order) => {
@@ -115,14 +142,19 @@ const handleDelete = async () => {
 </script>
 
 <template>
-  <VSheet border rounded>
+  <VRow>
+    <VCol cols="12" class="d-flex justify-end pa-4">
+      <VBtn :disabled="deliveryAssignments.length === 0" color="secondary" prepend-icon="mdi-file-document-outline"
+        rounded="lg" @click="loadProductionAssignments" :loading="loadingAssignments" elevation="1" class="mr-2">
+        Reporte de entregas
+      </VBtn>
+    </VCol>
+  </VRow>
+  <VSheet border rounded class="mt-4">
     <ClientOnly>
       <VAlert v-if="error" type="error" class="mt-4" icon="mdi-database-off">
         Error de obtencion de datos: {{ error }}
       </VAlert>
-      <DeleteModal ref="deleteDialog" tag="Pedido de" :name="selectedOrder?.client?.billName ?? ''" :recovery="recovery"
-        @confirm="handleDelete" />
-      <OrderModal v-model="dialogOpen" :is-edit="isEditMode" :order="selectedOrder" @submit="handleSubmit" />
       <VDataTable :headers="headersOrders" :hide-default-footer="orders?.length < 11" :items="orders" :loading="loading"
         loading-text="Cargando Pedidos...">
         <template #top>
@@ -176,6 +208,11 @@ const handleDelete = async () => {
           No se han encontrado registros.
         </template>
       </VDataTable>
+      <!-- Diálogo de Reporte de Asignaciones usando el componente separado -->
+      <OrderReport ref="reportDialog" :assignments="deliveryAssignments" :date="searchDate" />
+      <DeleteModal ref="deleteDialog" tag="Pedido de" :name="selectedOrder?.client?.billName ?? ''" :recovery="recovery"
+        @confirm="handleDelete" />
+      <OrderModal v-model="dialogOpen" :is-edit="isEditMode" :order="selectedOrder" @submit="handleSubmit" />
       <VSnackbar v-model="showSuccess">
         {{ textSuccess }}
       </VSnackbar>

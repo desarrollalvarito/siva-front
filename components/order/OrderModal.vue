@@ -23,12 +23,12 @@ const { fetchProducts } = useProduct()
 const clients = ref<Client[]>([])
 const employees = ref<Employee[]>([])
 const products = ref<Product[]>([])
-const searchClient = ref('')
-const searchDriver = ref('')
+const formRef = ref()
 const isEditing = computed(() => props.isEdit && props.order?.id)
 const isDelivery = ref(false)
 const selectedProduct = ref<Product | null>(null)
 const productQuantity = ref(1)
+const showError = ref(false)
 // Fechas mínima y máxima
 const minDate = new Date().toISOString().split('T')[0]
 const maxDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -82,7 +82,6 @@ const notAdded = (v: Product) => {
 
 const resetForm = () => {
   form.value = JSON.parse(JSON.stringify(formEmpty))
-  searchClient.value = ''
 }
 
 // Validar si el producto seleccionado ya ha sido agregado
@@ -97,8 +96,6 @@ watch(() => props.order, newVal => {
     if (isNullOrUndefined(newVal.delivery)) {
       form.value.delivery = JSON.parse(JSON.stringify(formEmpty.delivery))
     }
-    searchClient.value = newVal.client.billName || ''
-    searchDriver.value = newVal?.delivery?.driver.person.names || ''
     selectedProduct.value = null // Reiniciar selección de producto
     productQuantity.value = 1 // Reiniciar cantidad de producto
     form.value.delivery?.status !== "CANCELLED" ? isDelivery.value = true : isDelivery.value = false
@@ -110,19 +107,13 @@ watch(() => props.order, newVal => {
 
 // Método para habilitar campos
 const fieldsEnabled = computed(() => {
-  return isEditing.value || (form.value.client?.id ?? 0) > 0 ? true : false
+  return isEditing.value || (form.value.client.id) > 0 ? true : false
 })
-
-const handleSubmit = () => {
-  emit('submit', form.value)
-  emit('update:modelValue', false)
-}
 
 const handleClientSelect = (clientId: number) => {
   const selected = clients.value.find(c => c.id === clientId)
   if (selected && typeof selected.id === 'number') {
     form.value.client = { ...selected }
-    searchClient.value = selected.billName
   }
 }
 
@@ -130,7 +121,6 @@ const handleDriverSelect = (driverId: number) => {
   const selected = employeeFiltered.value.find(emp => emp.id === driverId)
   if (selected && form.value.delivery) {
     form.value.delivery.driver = { ...selected }
-    searchDriver.value = selected.displayName
   }
 }
 
@@ -160,11 +150,6 @@ const employeeFiltered = computed(() => {
     }))
 })
 
-const cancel = () => {
-  emit('update:modelValue', false)
-  resetForm()
-}
-
 const totalItems = computed(() => {
   if (!form.value.orderProduct || !Array.isArray(form.value.orderProduct)) {
     return 0
@@ -178,6 +163,10 @@ const totalItems = computed(() => {
     const quantity = Number(product.quantity) || 0
     return total + quantity
   }, 0)
+})
+
+const hasProductAdded = computed(() => {
+  return form.value.orderProduct.some(op => op.state !== 'INACTIVE')
 })
 
 const addProduct = () => {
@@ -219,21 +208,47 @@ const updateTotal = () => {
   // Forzar reactividad
   form.value.orderProduct = [...form.value.orderProduct]
 }
+
+const cancel = () => {
+  emit('update:modelValue', false)
+  resetForm()
+}
+
+const handleSubmit = async () => {
+  // Validar el formulario antes de enviar
+  const { valid } = await formRef.value.validate()
+  if (valid && hasProductAdded.value) {
+    submitForm()
+  }
+  if (!hasProductAdded.value) {
+    showError.value = true
+    setTimeout(() => {
+      showError.value = false
+    }, 3000)
+  }
+}
+
+const submitForm = () => {
+  emit('submit', form.value)
+  emit('update:modelValue', false)
+}
 </script>
 
 <template>
   <VDialog max-width="750" :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)">
-    <VForm @submit.prevent="handleSubmit">
+    <VForm @submit.prevent="handleSubmit" ref="formRef">
       <VCard :title="`${isEdit ? 'Modificar' : 'Nueva'} Orden`">
         <VCardText>
           <VRow>
             <VCol cols="12" md="6">
-              <VAutocomplete v-model="form.client.rut" :items="clients" label="Seleccionar Cliente"
-                item-title="billName" item-value="id" placeholder="Buscar Cliente por RUT" clearable
+              <VAutocomplete v-model="form.client.id" :items="clients" label="Seleccionar Cliente"
+                :item-title="getFullName" item-value="id" placeholder="Buscar Cliente por Nombre" clearable
                 :hide-no-data="false" @update:model-value="handleClientSelect" :rules="[required]"
                 :disabled="fieldsEnabled">
                 <template #item="{ props, item }">
-                  <VListItem v-bind="props" :subtitle="item.raw.rut" :title="item.raw.billName" />
+                  <VListItem v-bind="props"
+                    :subtitle="`${item.raw.rut || 'N/A'} - ${item.raw.shippingAddress || 'N/A'}`"
+                    :title="getFullName(item.raw)" />
                 </template>
               </VAutocomplete>
             </VCol>
@@ -248,12 +263,12 @@ const updateTotal = () => {
                 :disabled="!fieldsEnabled" @update:model-value="handleDeliverySwitch" />
             </VCol>
             <VCol cols="6" md="6">
-              <VAutocomplete v-model="form.delivery.driver.person.run" :items="employeeFiltered"
+              <VAutocomplete v-model="form.delivery.driver.id" :items="employeeFiltered"
                 :label="form.delivery ? 'Seleccionar conductor' : 'Active entrega para habilitar'"
-                item-title="displayName" item-value="id" placeholder="Buscar conductor" clearable
-                @update:model-value="handleDriverSelect" :disabled="!isDelivery">
+                :item-title="getFullName" item-value="id" placeholder="Buscar conductor por Nombre" clearable
+                @update:model-value="handleDriverSelect" :disabled="!isDelivery" :rules="isDelivery ? [required] : []">
                 <template #item="{ props, item }">
-                  <VListItem v-bind="props" :title="item.raw.displayName" :subtitle="item.raw.subtitle" />
+                  <VListItem v-bind="props" :title="item.raw.displayName" :subtitle="item.raw.person?.run || 'N/A'" />
                 </template>
               </VAutocomplete>
             </VCol>
@@ -301,6 +316,12 @@ const updateTotal = () => {
               </template>
               <template v-slot:bottom>
                 <div class="text-h6 pa-4">Total: {{ totalItems }} producto{{ totalItems !== 1 ? 's' : '' }}</div>
+                <div v-if="showError" class="pa-1 m-5 text-center bg-red rounded text-white color-red">
+                  <VIcon icon="mdi-alert"></VIcon><span> Debe añadir al menos un
+                    producto
+                    para continuar
+                  </span>
+                </div>
               </template>
             </VDataTable>
           </VCard>

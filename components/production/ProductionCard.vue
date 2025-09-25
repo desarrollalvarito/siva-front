@@ -151,7 +151,7 @@ const startProduction = async () => {
   try {
     loadingCard.value = true
     // Simular una operación asíncrona (en producción, esto sería una llamada API)
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    await new Promise(resolve => setTimeout(resolve, 3000))
     emit('start', props.production)
   } catch (error) {
     console.error('Error al iniciar producción:', error)

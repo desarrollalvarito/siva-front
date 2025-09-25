@@ -1,12 +1,9 @@
-import type { Production } from '@/types/model'
+import type { ApiResponse } from '@/types/api'
+import type { Kpis, Production } from '@/types/model'
 
 export const useProduction = () => {
-  const baseURL = urlToApiBase('/Production')
-  const production = ref<Production | null>(null)
-  const productions = ref<Production[]>([])
-  const loading = ref(false)
-  const error = ref<any | null>(null)
-  const date = ref('')
+  const baseURL = '/siva/v1/production'
+  const { $api } = useNuxtApp()
   const kpis = ref({
     totalOrdenes: 0,
     totalProductos: 0,
@@ -16,82 +13,102 @@ export const useProduction = () => {
   })
   const ordersProductions = ref<Array<{ id: number; name: string; productions: number; orders: number; }>>([])
 
-  const createProduction = async (payload: Production) => {
-    return await $fetch<Production>(`${baseURL}/add`, {
-      method: 'POST',
-      body: payload
-    })
-  }
-
-  const updateProduction = async (payload: Production) => {
-    console.log(payload);
-    return await $fetch<Production>(`${baseURL}/modify`, {
-      method: 'PUT',
-      body: payload
-    })
-  }
-
-  const deleteProduction = async (id: number) => {
-    return await $fetch<Production>(`${baseURL}/remove`, {
-      method: 'DELETE',
-      body: { id },
-    })
-  }
-
-  const fetchProductions = async () => {
-    loading.value = true
-    error.value = null
-
+  const fetchProductions = async (dateOrder: string): Promise<Production[]> => {
     try {
-      const data = await $fetch<Production[]>(`${baseURL}/list`, {
+      const response = await $api<ApiResponse<Production[]>>(`${baseURL}/list`, {
         method: 'POST',
-        body: { date: date.value }
+        body: { date: dateOrder }
       })
-      productions.value = data
-    }
-    catch (error: any) {
-      error.value = error.message || 'Fallo al obtener las Ordenes'
-    }
-    finally {
-      loading.value = false
+      if (response.success && response.data) {
+        return response.data
+      } else {
+        throw new Error(response.error || 'Error al obtener la produccion')
+      }
+    } catch (error: any) {
+      throw createError({
+        message: error.message,
+        statusCode: error.statusCode || 500
+      })
     }
   }
 
-  const fetchMetrics = async () => {
+  const fetchMetrics = async (dateOrder: string): Promise<Kpis> => {
     try {
-      const metrics = await $fetch<typeof kpis.value>(`${baseURL}/productionmetrics`, {
+      const response = await $api<ApiResponse<Kpis>>(`${baseURL}/productionmetrics`, {
         method: 'POST',
-        body: { date: date.value }
+        body: { date: dateOrder }
       })
-      kpis.value = metrics
-      return metrics
-    } catch (err: any) {
-      error.value = err.data?.statusMessage || err.message
-      return null
+      if (response.success && response.data) {
+        return response.data
+      } else {
+        throw new Error(response.error || 'Error al obtener la kpis')
+      }
+    } catch (error: any) {
+      throw createError({
+        message: error.message,
+        statusCode: error.statusCode || 500
+      })
     }
   }
 
-  const fetchOrdersProductions = async () => {
+  const fetchOrdersProductions = async (dateOrder: string): Promise<typeof ordersProductions.value> => {
     try {
-      ordersProductions.value = await $fetch<typeof ordersProductions.value>(`${baseURL}/ordersproductions`, {
+      const response = await $api<ApiResponse<typeof ordersProductions.value>>(`${baseURL}/ordersproductions`, {
         method: 'POST',
-        body: { date: date.value }
+        body: { date: dateOrder }
       })
-      return ordersProductions
-    } catch (err: any) {
-      error.value = err.data?.statusMessage || err.message
-      return null
+      if (response.success && response.data) {
+        return response.data
+      } else {
+        throw new Error(response.error || 'Error al obtener la toal de ordenes y producciones')
+      }
+    } catch (error: any) {
+      throw createError({
+        message: error.message,
+        statusCode: error.statusCode || 500
+      })
+    }
+  }
+
+  const createProduction = async (payload: Production): Promise<Production> => {
+    try {
+      const response = await $api<ApiResponse<Production>>(`${baseURL}/add`, {
+        method: 'POST',
+        body: payload
+      })
+      if (response.success && response.data) return response.data
+      throw new Error(response.error || 'Error al crear la produccion')
+    } catch (error: any) {
+      throw createError({ message: error.message, statusCode: error.statusCode || 500 })
+    }
+  }
+
+  const updateProduction = async (payload: Production): Promise<Production> => {
+    try {
+      const response = await $api<ApiResponse<Production>>(`${baseURL}/modify`, {
+        method: 'PUT',
+        body: payload
+      })
+      if (response.success && response.data) return response.data
+      throw new Error(response.error || 'Error al modificar la produccion')
+    } catch (error: any) {
+      throw createError({ message: error.message, statusCode: error.statusCode || 500 })
+    }
+  }
+
+  const deleteProduction = async (id: number): Promise<void> => {
+    try {
+      const response = await $api<ApiResponse<Production>>(`${baseURL}/remove`, {
+        method: 'DELETE',
+        body: { id }
+      })
+      if (!response.success) throw new Error(response.error || 'Error al eliminar la produccion')
+    } catch (error: any) {
+      throw createError({ message: error.message, statusCode: error.statusCode || 500 })
     }
   }
 
   return {
-    production,
-    productions,
-    ordersProductions,
-    loading,
-    error,
-    date,
-    kpis,
     fetchProductions,
     createProduction,
     updateProduction,
