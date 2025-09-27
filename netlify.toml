@@ -1,0 +1,35 @@
+# ============================
+# Build config para Nuxt 3 SSR
+# ============================
+
+[build]
+  command = "npm run build"
+  publish = ".output/public"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# ============================
+# Redirecciones para que Netlify use SSR en lugar de solo archivos estáticos
+# ============================
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/server"
+  status = 200
+
+# ============================
+# Netlify Functions (Nuxt 3 server)
+# ============================
+
+[functions]
+  node_bundler = "esbuild"
+  included_files = [".output/server/**"]
+
+# ============================
+# Plugin oficial de Nuxt para Netlify
+# ============================
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
