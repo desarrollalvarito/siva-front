@@ -29,6 +29,8 @@ export default defineNuxtConfig({
     enabled: true,
   },
 
+  ssr: true,
+
   nitro: {
     routeRules: {
       '/siva/**': {
@@ -37,7 +39,6 @@ export default defineNuxtConfig({
         },
       },
     },
-    preset: 'netlify',
   },
 
   css: [
