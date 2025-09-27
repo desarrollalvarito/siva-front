@@ -34,9 +34,10 @@ export default defineNuxtConfig({
       '/siva/**': {
         proxy: {
           to: `${process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:4001'}/api/**`,
-        }
-      }
-    }
+        },
+      },
+    },
+    preset: 'netlify',
   },
 
   css: [
@@ -176,20 +177,20 @@ export default defineNuxtConfig({
           signInResponseRefreshTokenPointer: '/refreshToken',
           refreshResponseTokenPointer: '/token',
           cookieName: 'auth.refreshToken',
-          maxAgeInSeconds: 60 * 60 * 3,  //3 h
+          maxAgeInSeconds: 60 * 60 * 3, // 3 h
           sameSiteAttribute: 'lax',
           httpOnlyCookieAttribute: false,
-        }
-      }
+        },
+      },
     },
     sessionRefresh: {
-      enablePeriodically: false,    // ⬅️ Desactiva refresco periódico
-      enableOnWindowFocus: false,   // ⬅️ Desactiva refresco al enfocar ventana
+      enablePeriodically: false, // ⬅️ Desactiva refresco periódico
+      enableOnWindowFocus: false, // ⬅️ Desactiva refresco al enfocar ventana
     },
     globalAppMiddleware: {
       isEnabled: true,
-      addDefaultCallbackUrl: false  // ⬇️ Evita verificación excesiva en rutas públicas
-    }
+      addDefaultCallbackUrl: false, // ⬇️ Evita verificación excesiva en rutas públicas
+    },
   },
   compatibilityDate: '2025-06-08',
 })
