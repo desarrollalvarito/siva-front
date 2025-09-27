@@ -12,9 +12,16 @@
  */
 import { promises as fs } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 // Installation: npm install --save-dev @iconify/tools @iconify/utils @iconify/json @iconify/iconify
-import { cleanupSVG, importDirectory, isEmptyColor, parseColors, runSVGO } from '@iconify/tools'
+import {
+  cleanupSVG,
+  importDirectory,
+  isEmptyColor,
+  parseColors,
+  runSVGO,
+} from '@iconify/tools'
 import type { IconifyJSON } from '@iconify/types'
 import { getIcons, getIconsCSS, stringToIcon } from '@iconify/utils'
 
@@ -56,69 +63,100 @@ interface BundleScriptConfig {
   json?: (string | BundleScriptCustomJSONConfig)[]
 }
 
-const sources: BundleScriptConfig = {
+// const sources: BundleScriptConfig = {
 
-  svg: [
-    // {
-    //   dir: 'assets/images/iconify-svg',
-    //   monotone: true,
-    //   prefix: 'custom',
-    // },
+//   svg: [
+//     // {
+//     //   dir: 'assets/images/iconify-svg',
+//     //   monotone: true,
+//     //   prefix: 'custom',
+//     // },
 
-    // {
-    //   dir: 'emojis',
-    //   monotone: false,
-    //   prefix: 'emoji',
-    // },
-  ],
+//     // {
+//     //   dir: 'emojis',
+//     //   monotone: false,
+//     //   prefix: 'emoji',
+//     // },
+//   ],
 
-  icons: [
-    // 'mdi:home',
-    // 'mdi:account',
-    // 'mdi:login',
-    // 'mdi:logout',
-    // 'octicon:book-24',
-    // 'octicon:code-square-24',
-  ],
+//   icons: [
+//     // 'mdi:home',
+//     // 'mdi:account',
+//     // 'mdi:login',
+//     // 'mdi:logout',
+//     // 'octicon:book-24',
+//     // 'octicon:code-square-24',
+//   ],
 
-  json: [
-    // Custom JSON file
-    // 'json/gg.json',
+//   json: [
+//     // Custom JSON file
+//     // 'json/gg.json',
 
-    // Iconify JSON file (@iconify/json is a package name, /json/ is directory where files are, then filename)
-    require.resolve('@iconify-json/bx/icons.json'),
-    require.resolve('@iconify-json/bxl/icons.json'),
-    require.resolve('@iconify-json/bxs/icons.json'),
-    require.resolve('@iconify-json/mdi/icons.json'),
-    {
-      filename: require.resolve('@iconify-json/fa/icons.json'),
-      icons: [
-        'circle',
-      ],
-    },
+//     // Iconify JSON file (@iconify/json is a package name, /json/ is directory where files are, then filename)
+//     // require.resolve('@iconify-json/bx/icons.json'),
+//     // require.resolve('@iconify-json/bxl/icons.json'),
+//     // require.resolve('@iconify-json/bxs/icons.json'),
+//     // require.resolve('@iconify-json/mdi/icons.json'),
+//     // {
+//     //   filename: require.resolve('@iconify-json/fa/icons.json'),
+//     //   icons: [
+//     //     'circle',
+//     //   ],
+//     // },
 
-    // Custom file with only few icons
-    // {
-    //   filename: require.resolve('@iconify-json/line-md/icons.json'),
-    //   icons: [
-    //     'home-twotone-alt',
-    //     'github',
-    //     'document-list',
-    //     'document-code',
-    //     'image-twotone',
-    //   ],
-    // },
-  ],
+//     // Custom file with only few icons
+//     // {
+//     //   filename: require.resolve('@iconify-json/line-md/icons.json'),
+//     //   icons: [
+//     //     'home-twotone-alt',
+//     //     'github',
+//     //     'document-list',
+//     //     'document-code',
+//     //     'image-twotone',
+//     //   ],
+//     // },
+//   ],
+// }
+
+// CAMBIO: Elimina require.resolve y usa import.meta.resolve de forma asíncrona
+async function getSources(): Promise<BundleScriptConfig> {
+  return {
+    svg: [
+      // ...sin cambios...
+    ],
+    icons: [
+      // ...sin cambios...
+    ],
+    json: [
+      // Custom JSON file
+      // 'json/gg.json',
+
+      // Iconify JSON file (@iconify/json es un paquete, /json/ es el directorio y luego el nombre del archivo)
+      await import.meta.resolve('@iconify-json/bx/icons.json'),
+      await import.meta.resolve('@iconify-json/bxl/icons.json'),
+      await import.meta.resolve('@iconify-json/bxs/icons.json'),
+      await import.meta.resolve('@iconify-json/mdi/icons.json'),
+      {
+        filename: await import.meta.resolve('@iconify-json/fa/icons.json'),
+        icons: ['circle'],
+      },
+
+      // ...otros...
+    ],
+  }
 }
 
 // File to save bundle to
-const target = join(__dirname, 'icons.css')
+const target = join(dirname(fileURLToPath(import.meta.url)), 'icons.css');
 
-  /**
-   * Do stuff!
-   */
+/**
+ * Do stuff!
+ */
 
-  ; (async function () {
+(async function () {
+  // CAMBIO: Obtén sources de la función asíncrona
+  const sources = await getSources()
+
   // Create directory for output if missing
   const dir = dirname(target)
   try {
@@ -151,6 +189,11 @@ const target = join(__dirname, 'icons.css')
     }
   }
 
+  // Utilidad para limpiar la ruta
+  function cleanFileUrl(path: string) {
+    return path.startsWith('file://') ? fileURLToPath(path) : path
+  }
+
   /**
    * Bundle JSON files and collect icons
    */
@@ -160,12 +203,22 @@ const target = join(__dirname, 'icons.css')
 
       // Load icon set
       const filename = typeof item === 'string' ? item : item.filename
-      const content = JSON.parse(await fs.readFile(filename, 'utf8')) as IconifyJSON
+
+      // CAMBIO: Limpia la ruta antes de leer el archivo
+      const cleanFilename = cleanFileUrl(filename)
+
+      const content = JSON.parse(
+        await fs.readFile(cleanFilename, 'utf8'),
+      ) as IconifyJSON
 
       for (const key in content) {
         if (key === 'prefix' && content.prefix === 'tabler') {
-          for (const k in content.icons)
-            content.icons[k].body = content.icons[k].body.replace(/stroke-width="2"/g, 'stroke-width="1.5"')
+          for (const k in content.icons) {
+            content.icons[k].body = content.icons[k].body.replace(
+              /stroke-width="2"/g,
+              'stroke-width="1.5"',
+            )
+          }
         }
       }
 
@@ -224,7 +277,9 @@ const target = join(__dirname, 'icons.css')
             await parseColors(svg, {
               defaultColor: 'currentColor',
               callback: (attr, colorStr, color) => {
-                return !color || isEmptyColor(color) ? colorStr : 'currentColor'
+                return !color || isEmptyColor(color)
+                  ? colorStr
+                  : 'currentColor'
               },
             })
           }
@@ -251,14 +306,12 @@ const target = join(__dirname, 'icons.css')
 
   // Generate CSS from collected icons
   const cssContent = allIcons
-    .map(iconSet => getIconsCSS(
-      iconSet,
-      Object.keys(iconSet.icons),
-      {
+    .map(iconSet =>
+      getIconsCSS(iconSet, Object.keys(iconSet.icons), {
         iconSelector: '.{prefix}-{name}',
         mode: 'mask',
-      },
-    ))
+      }),
+    )
     .join('\n')
 
   // Save the CSS to a file
