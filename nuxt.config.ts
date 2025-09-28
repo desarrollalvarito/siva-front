@@ -2,6 +2,9 @@ import { fileURLToPath } from 'node:url'
 import vuetify from 'vite-plugin-vuetify'
 import svgLoader from 'vite-svg-loader'
 
+// Helper para paths absolutos
+const getAbsolutePath = (path: string) => fileURLToPath(new URL(path, import.meta.url))
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   app: {
@@ -26,19 +29,13 @@ export default defineNuxtConfig({
   },
 
   devtools: {
-    enabled: true,
+    enabled: process.env.NODE_ENV === 'development',
   },
 
   ssr: true,
 
   nitro: {
-    routeRules: {
-      '/siva/**': {
-        proxy: {
-          to: `${process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:4001'}/api/**`,
-        },
-      },
-    },
+    preset: 'netlify-edge', // Usa netlify-edge para mejor rendimiento
   },
 
   css: [
@@ -69,19 +66,20 @@ export default defineNuxtConfig({
 
   experimental: {
     typedPages: true,
+    payloadExtraction: false, // Mejora el rendimiento en Netlify
   },
 
   typescript: {
     tsConfig: {
       compilerOptions: {
         paths: {
-          '@/*': ['../*'],
-          '@layouts/*': ['../@layouts/*'],
-          '@layouts': ['../@layouts'],
-          '@core/*': ['../@core/*'],
-          '@core': ['../@core'],
-          '@images/*': ['../assets/images/*'],
-          '@styles/*': ['../assets/styles/*'],
+          '@/*': ['./*'],
+          '@layouts/*': ['./@layouts/*'],
+          '@layouts': ['./@layouts'],
+          '@core/*': ['./@core/*'],
+          '@core': ['./@core'],
+          '@images/*': ['./assets/images/*'],
+          '@styles/*': ['./assets/styles/*'],
         },
       },
     },
@@ -104,12 +102,12 @@ export default defineNuxtConfig({
 
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('.', import.meta.url)),
-        '@core': fileURLToPath(new URL('./@core', import.meta.url)),
-        '@layouts': fileURLToPath(new URL('./@layouts', import.meta.url)),
-        '@images': fileURLToPath(new URL('./assets/images/', import.meta.url)),
-        '@styles': fileURLToPath(new URL('./assets/styles/', import.meta.url)),
-        '@configured-variables': fileURLToPath(new URL('./assets/styles/variables/_template.scss', import.meta.url)),
+        '@': getAbsolutePath('.'),
+        '@core': getAbsolutePath('./@core'),
+        '@layouts': getAbsolutePath('./@layouts'),
+        '@images': getAbsolutePath('./assets/images/'),
+        '@styles': getAbsolutePath('./assets/styles/'),
+        '@configured-variables': getAbsolutePath('./assets/styles/variables/_template.scss'),
       },
     },
 

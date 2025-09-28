@@ -4,25 +4,8 @@
 
 [build]
   command = "npm run build"
-  publish = "."
+  publish = ".output/public"
 
 [build.environment]
   NODE_VERSION = "22"
   NPM_FLAGS = "--legacy-peer-deps"
-
-# ============================
-# Redirección de todas las rutas a la función SSR de Nuxt
-# ============================
-
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/nuxt"
-  status = 200
-
-# ============================
-# Configuración de funciones serverless
-# ============================
-
-[functions]
-  node_bundler = "esbuild"
-  included_files = [".output/server/**"]
