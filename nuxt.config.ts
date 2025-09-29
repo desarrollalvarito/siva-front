@@ -36,24 +36,6 @@ export default defineNuxtConfig({
 
   nitro: {
     preset: 'netlify-edge', // Usa netlify-edge para mejor rendimiento
-    prerender: {
-      routes: ['/', '/login', '/dashboard'],
-      crawlLinks: false, // Desactiva el crawler automático
-      failOnError: false, // No fallar en errores de prerender
-      ignore: ['/404', '/200'], // Ignora estas rutas problemáticas
-    },
-    routeRules: {
-      // Rutas estáticas (prerenderizadas)
-      '/': { prerender: true, ssr: true },
-      '/login': { prerender: true, ssr: true },
-      '/dashboard': { prerender: true, ssr: true },
-
-      // Rutas de API - manejo de proxy si es necesario
-      '/api/**': { cors: true, headers: { 'Access-Control-Allow-Origin': '*' } },
-
-      // Rutas dinámicas (SSR en tiempo real)
-      '/**': { ssr: true },
-    },
   },
 
   css: [
