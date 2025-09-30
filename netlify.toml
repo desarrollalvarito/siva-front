@@ -1,12 +1,23 @@
-# ============================
-# Build config para Nuxt 3 SSR en Netlify
-# ============================
-
 [build]
   command = "npm run build"
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "22"
-  NPM_FLAGS = "--legacy-peer-deps"
-  SECRETS_SCAN_ENABLED = "false"
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Configuración para SPA fallback
+[[redirects]]
+  from = "/_nuxt/*"
+  to = "/_nuxt/:splat"
+  status = 200
+
+# Para manejar rutas de la aplicación
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

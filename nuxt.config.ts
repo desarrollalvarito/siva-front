@@ -35,7 +35,7 @@ export default defineNuxtConfig({
   ssr: true,
 
   nitro: {
-    preset: 'netlify-edge', // Usa netlify-edge para mejor rendimiento
+    preset: 'netlify',
   },
 
   css: [
